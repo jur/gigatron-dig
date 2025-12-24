@@ -15,7 +15,7 @@ The simulation can be started by the following steps:
 ![Play Button](pictures/tools.png)
 * Click on EnableCLK. The CPU is now running and takes some time until the window with the VGA output is opened.
 ![EnableCLK](pictures/enableclk.png)
-* You can control it via the buttons of the gamepad. Click on the SELECT button and hold for some seconds. This will change the resolution. Release the SELECT button from some seconds. Repeat that until you have more black on the screen. More black lines will make it faster.
+* You can control it via the buttons of the gamepad. Click on the SELECT button and hold for some seconds. This will change the resolution. Release the SELECT button for some seconds. Repeat that until you have more black on the screen. More black lines will make it faster.
 ![Gamepad](pictures/gamepad.png)
 * With the buttons for UP/DOWN/LEFT/RIGHT you can select an menu entry and A will start it.
 The simulation is pretty slow.
