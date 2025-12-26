@@ -687,7 +687,7 @@
         </entry>
         <entry>
           <string>Label</string>
-          <string>CLK_25MHz</string>
+          <string>CLK1</string>
         </entry>
         <entry>
           <string>Frequency</string>
@@ -2047,16 +2047,6 @@
         </entry>
       </elementAttributes>
       <pos x="1040" y="9700"/>
-    </visualElement>
-    <visualElement>
-      <elementName>74244.dig</elementName>
-      <elementAttributes>
-        <entry>
-          <string>Label</string>
-          <string>Non-inverting tri-state buffer</string>
-        </entry>
-      </elementAttributes>
-      <pos x="960" y="3880"/>
     </visualElement>
     <visualElement>
       <elementName>Tunnel</elementName>
@@ -5812,16 +5802,6 @@
       <pos x="200" y="5560"/>
     </visualElement>
     <visualElement>
-      <elementName>74244.dig</elementName>
-      <elementAttributes>
-        <entry>
-          <string>Label</string>
-          <string>BUS Gateway AC</string>
-        </entry>
-      </elementAttributes>
-      <pos x="560" y="5760"/>
-    </visualElement>
-    <visualElement>
       <elementName>VDD</elementName>
       <elementAttributes/>
       <pos x="760" y="5740"/>
@@ -8632,7 +8612,7 @@
         </entry>
         <entry>
           <string>Label</string>
-          <string>CLK_6250KHz</string>
+          <string>CLK2</string>
         </entry>
       </elementAttributes>
       <pos x="-40" y="160"/>
@@ -10777,6 +10757,26 @@
         </entry>
       </elementAttributes>
       <pos x="1120" y="260"/>
+    </visualElement>
+    <visualElement>
+      <elementName>74244fixed.dig</elementName>
+      <elementAttributes>
+        <entry>
+          <string>Label</string>
+          <string>BUS Gateway AC</string>
+        </entry>
+      </elementAttributes>
+      <pos x="560" y="5760"/>
+    </visualElement>
+    <visualElement>
+      <elementName>74244fixed.dig</elementName>
+      <elementAttributes>
+        <entry>
+          <string>Label</string>
+          <string>Non-inverting tri-state buffer</string>
+        </entry>
+      </elementAttributes>
+      <pos x="960" y="3880"/>
     </visualElement>
   </visualElements>
   <wires>

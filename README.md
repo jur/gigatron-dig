@@ -51,7 +51,47 @@ There were some design changes needed to get it working in the simulation and ge
 verilog export is supported via gigatroncpu.dig.
 
 # ROM Problems
-It seems that 6502 BRK instruction is not correctly implemented in ROMv6. Trace has shown that instruction at 0x10ff is executed when v6502_BRK is called. This looks like a bug in the ROM code (v6). It is not know whether this has an side effect. All 6502 instructions seem to have a problem with the branch delay slot. For v6502_SED it has most likely a side effect as Y register is modified.
+It seems that 6502 BRK instruction is not correctly implemented in ROMv6. Trace has shown that instruction at 0x10ff is executed when v6502\_BRK is called. This looks like a bug in the ROM code (v6). It is not know whether this has an side effect. All 6502 instructions seem to have a problem with the branch delay slot. For v6502\_SED it has most likely a side effect as Y register is modified.
+
+# Altera Cyclone II FPGA Starter Kit
+There is a Altera quartus project for the DE1 board, but the ROM access is too slow.
+The file AlterCycloneIIFPGAStarterBoardSetup/output\_files/setupboardmem.sof can be loaded to the FPGA on the DE1 board.
+The VGA timing is not correct, so you will not see a picture when connecting a VGA monitor.
+SW[9] enables the clock. 
+Clock speed is configured via SW[8:5]. 0 is around 1 Hz. 1 is 25 MHz. 2 means 1/2 speed of that. 3 is 1/3 and so on.
+SW[3:0] selects what is displayed on the 7 segments LEDs.
+
+SW[3:0] | Displayed value
+--------+---------------------------------------
+   0000 | ROM address (instruction pointer)
+   0001 | Value read from ROM
+   0010 | Instruction register and data register
+   0011 | Accumulator register
+   0100 | X register
+   0101 | Y register
+   0110 | OUT register
+   0111 | value on BUS
+   1000 | Value calculated by ALU
+   1001 | Bit 8: IE\_N
+        | Input value
+   1010 | SRAM address, DEAD when larger than 16 bit
+   1011 | Value read/written from/to SRAM
+   1100 | EXOUT value
+   1101 | Bit 0 SRAM\_OE\_N
+        | Bit 1 SRAM\_OE\_N
+        | Bit 2 SRAM\_OE\_N requested by cpu
+        | Bit 8 SRAM\_WE\_N
+        | Bit 9 SRAM\_WE\_N request by cpu
+   1110 | Bit 0: reset\_n
+        | Bit 1: clk1
+        | Bit 2: clk2
+        | 2 bit clk\_counter
+   1111 | rom\_counter
+        | Bit 4: insn\_ready
+
+The green LEDs are EXOUT; i.e. 0 to 3 are also on the gigatron TTL board.
 
 # Source of Files
-74138ndelay.dig is a copy of Digital/src/main/dig/lib/DIL Chips/74xx/plexers/74138.dig (git https://github.com/hneemann/Digital.git 535812dacb7c34f125f8033b37db84bdb17bda4b), but delay was removed, because this cannot be converted to verilog.
+Some files were taken from Digital/src/main/dig/lib/DIL Chips/74xx/plexers/74138.dig (git https://github.com/hneemann/Digital.git 535812dacb7c34f125f8033b37db84bdb17bda4b), but include some fixes.
+74138ndelay.dig is a copy of Digital/src/main/dig/lib/DIL Chips/74xx/plexers/74138.dig, but delay was removed, because this cannot be converted to verilog.
+74244fixed.dig is a copy of Digital/src/main/dig/lib/DIL Chips/74xx/driver/74244.dig, but the ~ sign was moved to the first character, because this cannot be handled in verilog code.
