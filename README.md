@@ -73,21 +73,21 @@ SW[3:0] | Displayed value
    0111 | value on BUS
    1000 | Value calculated by ALU
    1001 | Bit 8: IE\_N
-        | Input value
+      - | Input value
    1010 | SRAM address, DEAD when larger than 16 bit
    1011 | Value read/written from/to SRAM
    1100 | EXOUT value
    1101 | Bit 0 SRAM\_OE\_N
-        | Bit 1 SRAM\_OE\_N
-        | Bit 2 SRAM\_OE\_N requested by cpu
-        | Bit 8 SRAM\_WE\_N
-        | Bit 9 SRAM\_WE\_N request by cpu
+      - | Bit 1 SRAM\_OE\_N
+      - | Bit 2 SRAM\_OE\_N requested by cpu
+      - | Bit 8 SRAM\_WE\_N
+      - | Bit 9 SRAM\_WE\_N request by cpu
    1110 | Bit 0: reset\_n
-        | Bit 1: clk1
-        | Bit 2: clk2
-        | 2 bit clk\_counter
+      - | Bit 1: clk1
+      - | Bit 2: clk2
+      - | 2 bit clk\_counter
    1111 | rom\_counter
-        | Bit 4: insn\_ready
+      - | Bit 4: insn\_ready
 
 The green LEDs are EXOUT; i.e. 0 to 3 are also on the gigatron TTL board.
 
