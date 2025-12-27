@@ -62,7 +62,7 @@ Clock speed is configured via SW[8:5]. 0 is around 1 Hz. 1 is 25 MHz. 2 means 1/
 SW[3:0] selects what is displayed on the 7 segments LEDs.
 
 SW[3:0] | Displayed value
---------+---------------------------------------
+--------|-------------------------------------------
    0000 | ROM address (instruction pointer)
    0001 | Value read from ROM
    0010 | Instruction register and data register
