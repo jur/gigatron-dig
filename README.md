@@ -61,33 +61,33 @@ SW[9] enables the clock.
 Clock speed is configured via SW[8:5]. 0 is around 1 Hz. 1 is 25 MHz. 2 means 1/2 speed of that. 3 is 1/3 and so on.
 SW[3:0] selects what is displayed on the 7 segments LEDs.
 
-SW[3:0] | Displayed value
---------|-------------------------------------------
-   0000 | ROM address (instruction pointer)
-   0001 | Value read from ROM
-   0010 | Instruction register and data register
-   0011 | Accumulator register
-   0100 | X register
-   0101 | Y register
-   0110 | OUT register
-   0111 | value on BUS
-   1000 | Value calculated by ALU
-   1001 | Bit 8: IE\_N
-      - | Input value
-   1010 | SRAM address, DEAD when larger than 16 bit
-   1011 | Value read/written from/to SRAM
-   1100 | EXOUT value
-   1101 | Bit 0 SRAM\_OE\_N
-      - | Bit 1 SRAM\_OE\_N
-      - | Bit 2 SRAM\_OE\_N requested by cpu
-      - | Bit 8 SRAM\_WE\_N
-      - | Bit 9 SRAM\_WE\_N request by cpu
-   1110 | Bit 0: reset\_n
-      - | Bit 1: clk1
-      - | Bit 2: clk2
-      - | 2 bit clk\_counter
-   1111 | rom\_counter
-      - | Bit 4: insn\_ready
+| SW[3:0] | Displayed value
+|---------|-------------------------------------------
+|    0000 | ROM address (instruction pointer)
+|    0001 | Value read from ROM
+|    0010 | Instruction register and data register
+|    0011 | Accumulator register
+|    0100 | X register
+|    0101 | Y register
+|    0110 | OUT register
+|    0111 | value on BUS
+|    1000 | Value calculated by ALU
+|    1001 | Bit 8: IE\_N
+|         | Input value
+|    1010 | SRAM address, DEAD when larger than 16 bit
+|    1011 | Value read/written from/to SRAM
+|    1100 | EXOUT value
+|    1101 | Bit 0 SRAM\_OE\_N
+|         | Bit 1 SRAM\_OE\_N
+|         | Bit 2 SRAM\_OE\_N requested by cpu
+|         | Bit 8 SRAM\_WE\_N
+|         | Bit 9 SRAM\_WE\_N request by cpu
+|    1110 | Bit 0: reset\_n
+|         | Bit 1: clk1
+|         | Bit 2: clk2
+|         | 2 bit clk\_counter
+|    1111 | rom\_counter
+|         | Bit 4: insn\_ready
 
 The green LEDs are EXOUT; i.e. 0 to 3 are also on the gigatron TTL board.
 
