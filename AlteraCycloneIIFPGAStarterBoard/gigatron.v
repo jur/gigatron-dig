@@ -324,46 +324,52 @@ begin
 end
 
 // CPU (imported from Digital)
+wire [3:0] gigatron_vga_r;
+wire [3:0] gigatron_vga_g;
+wire [3:0] gigatron_vga_b;
+wire gigatron_vga_hs;
+wire gigatron_vga_vs;
+
 gigatroncpu cpu(
 	// Clock
 	clk1,
 	clk2,
-	
+
 	// Reset
 	reset_n,
-	
+
 	// ROM
 	insn,
-	
+
 	// SRAM
 	gigatron_sram_read_data,
-	
+
 	// Controller
 	SER_DATA,
-	
+
 	// ROM
 	romaddr,
-	
+
 	// Output
 	EXOUT,
-	
+
 	// SRAM
 	SRAM_ADDR,
 	gigatron_sram_write_data,
 	gigatron_sram_oe_n,
 	gigatron_sram_we_n,
-	
+
 	// VGA
-	VGA_R,
-	VGA_G,
-	VGA_B,
-	VGA_HS,
-	VGA_VS,
-	
+	gigatron_vga_r,
+	gigatron_vga_g,
+	gigatron_vga_b,
+	gigatron_vga_hs,
+	gigatron_vga_vs,
+
 	// Controller
 	SER_PULSE,
 	SER_LATCH,
-	
+
 	// Debug
 	RegIR,
 	RegDR,
@@ -376,5 +382,22 @@ gigatroncpu cpu(
 	Input,
 	IE_N
 );
+
+vgadrv vga(
+	CLOCK_50,
+	VGA_R,
+	VGA_G,
+	VGA_B,
+	VGA_HS,
+	VGA_VS,
+
+	clk1,
+	clk2,
+
+	gigatron_vga_r,
+	gigatron_vga_g,
+	gigatron_vga_b,
+	gigatron_vga_hs,
+	gigatron_vga_vs);
 
 endmodule

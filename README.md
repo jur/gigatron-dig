@@ -57,7 +57,9 @@ It seems that 6502 BRK instruction is not correctly implemented in ROMv6. Trace 
 There is an Altera quartus project for the DE1 board, but the ROM access is too slow.
 Flash has only 8 bit data klines connected, so 2 accesses are needed for reading the instruction (2 * 70 ns required).
 The file AlterCycloneIIFPGAStarterBoardSetup/output\_files/setupboardmem.sof can be loaded to the FPGA on the DE1 board.
-The VGA timing is not correct, so you will not see a picture when connecting a VGA monitor.
+The VGA timing is not correct. There is a VGA driver which converts it,
+but it has to buffer it and the memory is limited on the Cyclone II.
+So only the first line with characters can be displayed.
 The switches can be used to configure the board:
 
 | Switch  | Purpose
