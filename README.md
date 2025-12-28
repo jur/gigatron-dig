@@ -54,12 +54,37 @@ verilog export is supported via gigatroncpu.dig.
 It seems that 6502 BRK instruction is not correctly implemented in ROMv6. Trace has shown that instruction at 0x10ff is executed when v6502\_BRK is called. This looks like a bug in the ROM code (v6). It is not know whether this has an side effect. All 6502 instructions seem to have a problem with the branch delay slot. For v6502\_SED it has most likely a side effect as Y register is modified.
 
 # Altera Cyclone II FPGA Starter Kit
-There is a Altera quartus project for the DE1 board, but the ROM access is too slow.
+There is an Altera quartus project for the DE1 board, but the ROM access is too slow.
+Flash has only 8 bit data klines connected, so 2 accesses are needed for reading the instruction (2 * 70 ns required).
 The file AlterCycloneIIFPGAStarterBoardSetup/output\_files/setupboardmem.sof can be loaded to the FPGA on the DE1 board.
 The VGA timing is not correct, so you will not see a picture when connecting a VGA monitor.
-SW[9] enables the clock. 
-Clock speed is configured via SW[8:5]. 0 is around 1 Hz. 1 is 25 MHz. 2 means 1/2 speed of that. 3 is 1/3 and so on.
-SW[3:0] selects what is displayed on the 7 segments LEDs.
+The switches can be used to configure the board:
+
+| Switch  | Purpose
+|---------|--------------------------------------------
+|   SW[9] | Enable clock -> ON
+| SW[8:5] | Configure clock frequency
+|   SW[4] | unused
+| SW[3:0] | Configure displayed value on 7 segment LEDs
+
+| SW[8:5] | Frequency | CPU       | ROM Access time
+|---------|-----------|-----------|----------------
+|    0000 | 2.98 Hz   | 0.42 Hz   | 335 ms
+|    0001 | 12.5 MHz  | 1.785 MHz | 80 ns
+|    0010 | 8.333 MHz | 1.19 MHz  | 120 ns
+|    0011 | 6.25 MHz  | 0.89 MHz  | 160 ns
+|    0100 | 5 MHz     | 0.714 MHz | 200 ns
+|    0101 | 4.166 MHz | 0.595 MHz | 240 ns
+|    0110 | 3.571 MHz | 0.510 MHz | 280 ns
+|    0111 | 3.125 MHz | 0.446 MHz | 320 ns
+|    1000 | 2.777 MHz | 0.397 MHz | 360 ns
+|    1001 | 2.5 MHz   | 0.357 MHz | 400 ns
+|    1010 | 2.273 MHz | 0.325 MHz | 440 ns
+|    1011 | 2.083 MHz | 0.298 MHz | 480 ns
+|    1100 | 1.923 MHz | 0.275 MHz | 520 ns
+|    1101 | 1.786 MHz | 0.255 MHz | 560 ns
+|    1110 | 1.667 MHz | 0.238 MHz | 600 ns
+|    1111 | 1.563 MHz | 0.223 MHz | 640 ns
 
 | SW[3:0] | Displayed value
 |---------|-------------------------------------------
