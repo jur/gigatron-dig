@@ -15,7 +15,7 @@ module vgadrv(
 	input wire gigatron_vga_hs,
 	input wire gigatron_vga_vs);
 
-parameter LINES = 8;
+parameter LINES = 12;
 parameter FIRSTLINE = 25;
 
 reg [9:0] x;
