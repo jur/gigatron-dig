@@ -18,6 +18,7 @@ The simulation can be started by the following steps:
 * You can control it via the buttons of the gamepad. Click on the SELECT button and hold for some seconds. This will change the resolution. Release the SELECT button for some seconds. Repeat that until you have more black on the screen. More black lines will make it faster.
 ![Gamepad](pictures/gamepad.png)
 * With the buttons for UP/DOWN/LEFT/RIGHT you can select an menu entry and A will start it.
+* A keyboard is also emulated. A window is opened where you can type. It will buffer the keys, but it cannot handle keys which are typed multiple times. You need to wait until it transferred something else; e.g. 0xFF (when no button pressed on the gamepad).
 The simulation is pretty slow.
 
 ![Menu](pictures/menu.png)
