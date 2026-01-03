@@ -54,15 +54,41 @@ verilog export is supported via gigatroncpu.dig.
 # ROM Problems
 It seems that 6502 BRK instruction is not correctly implemented in ROMv6. Trace has shown that instruction at 0x10ff is executed when v6502\_BRK is called. This looks like a bug in the ROM code (v6). It is not know whether this has an side effect. All 6502 instructions seem to have a problem with the branch delay slot. For v6502\_SED it has most likely a side effect as Y register is modified.
 
-# Altera Cyclone II FPGA Starter Kit
-There is an Altera quartus project for the DE1 board, but the ROM access is too slow.
-Flash has only 8 bit data klines connected, so 2 accesses are needed for reading the instruction (2 * 70 ns required).
+# Altera Cyclone II FPGA Starter Kit (DE1)
+
+The Altera Cyclone II FPGA Starter Kit (DE1) is a development board which has:
+- SDRAM 8MiB: Zentel A2V64S40CTP-G6 166 MHz CL3 3.3V, LVTTL
+- SRAM: 256KiB: ISSI IS61LV25616BLL-10TL 10ns 3.3V
+- FLASH: 4MiB: Spansion S29AL032D70TFI04, 2.7 V to 3.6 V, 70ns
+- FPGA: EP2C20F484C7N
+- EPCS4
+
+The board is supported in the software Altera Quartus 13.0.1 (Ubuntu 14.04 LTS trusty or Windows 32/64 Bit).
+The folder AlteraCycloneIIFPGAStarterBoard contains a quartus project for the board.
+
+Before it can be used, the flash needs to contain the ROMv6.rom. The board comes with the CII\_Starter\_USB\_API\_v1 project.
+This can be used to load the ROM to flash memory.
+When CII\_Starter\_USB\_API.pof or CII\_Starter\_USB\_API.sof is running on the FPGA, the program
+CII\_Starter\_Kit\_Control\_Panel.exe can update the flash. The USB Blaster driver needs to be installed first.
+The driver provides an FTDI compatible UART.
 The file AlterCycloneIIFPGAStarterBoardSetup/output\_files/setupboardmem.sof can be loaded to the FPGA on the DE1 board.
+You have to select a speed with SW[8:5] (e.g. 1000) and then enable the clock by changing switch SW[9] to ON.
+When the clock speed is low (i.e. 0000), it will take a very long time.
+There should be something visible on VGA monitor which is connected to the board (blue background with text Gigtron).
+
+## Limitations
+The ROM access on the board is too slow.
+Flash has only 8 bit data lines connected, so 2 accesses are needed for reading the instruction (2 * 70 ns required).
 The VGA timing is not correct. There is a VGA driver which converts it.
-VGA is buffered in SDRAM. There is one buffer (wdata) which captures one line (160 pixel) from the gigatron.
+The slow VGA is buffered in SDRAM and then presented at the output at higher speed.
+There is one buffer (wdata) which captures one line (160 pixel) from the gigatron.
 This buffer is written to SDRAM.
 There is another buffer (rdata) where the data written to the VGA connector is stored. This is read from SDRAM.
+The gigatron ROMv6 changes the length of the VSYNC to transmit data. This is not supported.
+The black lines are not displayed, but always a full picture. So when you increase the number of black lines, you will not notice it.
+So you can increase the speed without loosing the pciture quality.
 
+## Board Configuration
 The switches can be used to configure the board:
 
 | Switch  | Purpose
