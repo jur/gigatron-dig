@@ -80,12 +80,12 @@ There should be something visible on VGA monitor which is connected to the board
 Button KEY1 is the A button.
 KEY3 and KEY2 change function dependeing on SW[1:0].
 
-SW[1:0] | KEY3   | KEY2
---------|--------|------
-     00 | UP     | DOWN
-     01 | LEFT   | RIGHT
-     10 | SELECT | START
-     11 | A      | B
+| SW[1:0] | KEY3   | KEY2
+|---------|--------|------
+|      00 | UP     | DOWN
+|      01 | LEFT   | RIGHT
+|      10 | SELECT | START
+|      11 | A      | B
 
 ## Limitations
 The ROM access on the board is too slow.
