@@ -54,7 +54,6 @@ reg [5:0] rdata[WIDTH];
 reg [9:0] ry;
 reg [9:0] rline;
 reg [7:0] rx;
-reg [7:0] rlast;
 reg rstarted;
 
 reg [15:0] dbgcnt;
@@ -248,7 +247,6 @@ begin
 		end else if (y == 525) begin
 			ry <= 10'h0;
 		end
-		rlast <= x;
 	end
 end
 

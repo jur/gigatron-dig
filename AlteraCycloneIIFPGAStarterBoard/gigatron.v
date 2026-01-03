@@ -193,18 +193,49 @@ begin
 end
 
 // Famiclone controller lines
-reg SER_DATA;
 wire SER_PULSE;
 wire SER_LATCH;
 
+reg [8:0] gamepad_data;
+
 initial begin
-	SER_DATA = 1'b1;
+	gamepad_data = 8'hFE;
 end
 
-always @(posedge clk1)
+always @(posedge SER_LATCH or posedge SER_PULSE)
 begin
-	// Set input to 8'hFF; i.e. no button is pressed.
-	SER_DATA <= 1'b1;
+	if (SER_LATCH) begin
+		gamepad_data[7:0] <= 8'hff;
+
+		case (SW[1:0])
+			2'b00: begin
+				gamepad_data[3:2] <= KEY[3:2];
+			end
+
+			2'b01: begin
+				gamepad_data[1:0] <= KEY[3:2];
+			end
+
+			2'b10: begin
+				gamepad_data[5:4] <= KEY[3:2];
+			end
+
+			2'b11: begin
+				gamepad_data[7:6] <= KEY[3:2];
+			end
+		endcase
+
+		gamepad_data[7] <= KEY[1];
+	end else begin
+		gamepad_data[0] <= 1'b0;
+		gamepad_data[1] <= gamepad_data[0];
+		gamepad_data[2] <= gamepad_data[1];
+		gamepad_data[3] <= gamepad_data[2];
+		gamepad_data[4] <= gamepad_data[3];
+		gamepad_data[5] <= gamepad_data[4];
+		gamepad_data[6] <= gamepad_data[5];
+		gamepad_data[7] <= gamepad_data[6];
+	end
 end
 
 // SRAM
@@ -258,6 +289,15 @@ wire [7:0] ALUValue; // Current value calculated by ALU.
 wire [7:0] Input; // Input data read from gamepad (for debugging).
 wire IE_N; // Control line for reading data from gamepad (for debugging).
 
+reg [7:0] InputReg;
+
+always @(posedge clk2)
+begin
+	if (!IE_N) begin
+		InputReg <= Input;
+	end
+end
+
 reg [15:0] dbgval;
 wire [15:0] dbgvga;
 
@@ -308,10 +348,8 @@ begin
 			dbgval[7:0] = ALUValue;
 		end
 		5'b01001: begin
-			dbgval[15:10] <= 0;
-			dbgval[9] <= SER_DATA;
-			dbgval[8] <= IE_N;
-			dbgval[7:0] <= Input;
+			dbgval[15:8] <= gamepad_data;
+			dbgval[7:0] <= InputReg;
 		end
 		5'b01010: begin
 			if (SRAM_ADDR < 18'h10000) begin
@@ -396,7 +434,7 @@ gigatroncpu cpu(
 	gigatron_sram_read_data,
 
 	// Controller
-	SER_DATA,
+	gamepad_data[7], /* SER_DATA */
 
 	// ROM
 	romaddr,

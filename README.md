@@ -76,6 +76,17 @@ You have to select a speed with SW[8:5] (e.g. 1000) and then enable the clock by
 When the clock speed is low (i.e. 0000), it will take a very long time.
 There should be something visible on VGA monitor which is connected to the board (blue background with text Gigtron).
 
+## Gamepad
+Button KEY1 is the A button.
+KEY3 and KEY2 change function dependeing on SW[1:0].
+
+SW[1:0] | KEY3   | KEY2
+--------|--------|------
+     00 | UP     | DOWN
+     01 | LEFT   | RIGHT
+     10 | SELECT | START
+     11 | A      | B
+
 ## Limitations
 The ROM access on the board is too slow.
 Flash has only 8 bit data lines connected, so 2 accesses are needed for reading the instruction (2 * 70 ns required).
@@ -128,12 +139,12 @@ The switches can be used to configure the board:
 |   00110 | OUT register
 |   00111 | value on BUS
 |   01000 | Value calculated by ALU
-|   01001 | Bit 8: IE\_N
+|   01001 | Gamepad State
 |         | Input value
 |   01010 | SRAM address, DEAD when larger than 16 bit
-|   1011 | Value read/written from/to SRAM
-|   1100 | EXOUT value
-|   1101 | Bit 0 SRAM\_OE\_N
+|   01011 | Value read/written from/to SRAM
+|   01100 | EXOUT value
+|   01101 | Bit 0 SRAM\_OE\_N
 |         | Bit 1 SRAM\_OE\_N
 |         | Bit 2 SRAM\_OE\_N requested by cpu
 |         | Bit 8 SRAM\_WE\_N
