@@ -59,7 +59,10 @@ There is an Altera quartus project for the DE1 board, but the ROM access is too 
 Flash has only 8 bit data klines connected, so 2 accesses are needed for reading the instruction (2 * 70 ns required).
 The file AlterCycloneIIFPGAStarterBoardSetup/output\_files/setupboardmem.sof can be loaded to the FPGA on the DE1 board.
 The VGA timing is not correct. There is a VGA driver which converts it.
-VGA is buffered in SDRAM.
+VGA is buffered in SDRAM. There is one buffer (wdata) which captures one line (160 pixel) from the gigatron.
+This buffer is written to SDRAM.
+There is another buffer (rdata) where the data written to the VGA connector is stored. This is read from SDRAM.
+
 The switches can be used to configure the board:
 
 | Switch  | Purpose
@@ -115,20 +118,27 @@ The switches can be used to configure the board:
 |         | 2 bit clk\_counter
 |   01111 | rom\_counter
 |         | Bit 4: insn\_ready
-|   10001 | VGA debug information
-|   10010 |
-|   10011 |
-|   10100 |
-|   10101 |
-|   10110 |
-|   10111 |
+|   10000 | VGA debug information
+|         | Bit 0: 1 means: Buffer (wdata) with captured VGA data is full (one line, 160 pixel).
+|         | Bit 1: wr\_enable signal of SDRAM controller (data ready for writing to SDRAM).
+|         | Bit 9: rd\_enable signal of SDRAM controller (address ready for reading from SDRAM).
+|         | Bit 10: 1 means: Waiting for data read from SDRAM.
+|         | Bit 11: 1 means: rd\_ready signal from SDSRAM controller (data has been read).
+|         | Bit 15: 1 means: busy signal from SDSRAM controller.
+|   10001 | VGA: Debug counter, incremented for each 16 Bit read from SDRAM.
+|   10010 | VGA: Next line (y) which should be read from SDRAM, because it will be displayed.
+|   10011 | VGA: Current line (y) which is read from SDRAM controller.
+|   10100 | VGA: Upper address bits for reading from SDRAM.
+|   10101 | VGA: Lower address bits for reading from SDRAM.
+|   10110 | VGA: Current pixel (x) read from SDRAM.
+|   10111 | VGA: Line (y) captured in buffer.
 
 The green LEDs are EXOUT; i.e. 0 to 3 are also on the gigatron TTL board.
 
 # Source of Files
 Some files were taken from other projects. Here is a table with the files:
 
-File Name (source)                                  | File Name (this project)                          | git repository                                    | Version (git commit)                     | License                         | Changes
+File Name (this project)                            | File Name (source)                                | git repository                                    | Version (git commit)                     | License                         | Changes
 ----------------------------------------------------|---------------------------------------------------|---------------------------------------------------|------------------------------------------|---------------------------------|----------------------------------------------------------------
 74138ndelay.dig                                     | src/main/dig/lib/DIL Chips/74xx/plexers/74138.dig | https://github.com/hneemann/Digital.git           | 535812dacb7c34f125f8033b37db84bdb17bda4b | GNU General Public License v3.0 | Delay was removed, because this cannot be converted to verilog.
 74244fixed.dig                                      | src/main/dig/lib/DIL Chips/74xx/driver/74244.dig  | https://github.com/hneemann/Digital.git           | 535812dacb7c34f125f8033b37db84bdb17bda4b | GNU General Public License v3.0 | The ~ sign was moved to the first character, because this cannot be handled in verilog code.
