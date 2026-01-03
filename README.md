@@ -58,9 +58,8 @@ It seems that 6502 BRK instruction is not correctly implemented in ROMv6. Trace 
 There is an Altera quartus project for the DE1 board, but the ROM access is too slow.
 Flash has only 8 bit data klines connected, so 2 accesses are needed for reading the instruction (2 * 70 ns required).
 The file AlterCycloneIIFPGAStarterBoardSetup/output\_files/setupboardmem.sof can be loaded to the FPGA on the DE1 board.
-The VGA timing is not correct. There is a VGA driver which converts it,
-but it has to buffer it and the memory is limited on the Cyclone II.
-So only the first line with characters can be displayed.
+The VGA timing is not correct. There is a VGA driver which converts it.
+VGA is buffered in SDRAM.
 The switches can be used to configure the board:
 
 | Switch  | Purpose
@@ -89,37 +88,50 @@ The switches can be used to configure the board:
 |    1110 | 1.667 MHz | 0.238 MHz | 600 ns
 |    1111 | 1.563 MHz | 0.223 MHz | 640 ns
 
-| SW[3:0] | Displayed value
+| SW[4:0] | Displayed value
 |---------|-------------------------------------------
-|    0000 | ROM address (instruction pointer)
-|    0001 | Value read from ROM
-|    0010 | Instruction register and data register
-|    0011 | Accumulator register
-|    0100 | X register
-|    0101 | Y register
-|    0110 | OUT register
-|    0111 | value on BUS
-|    1000 | Value calculated by ALU
-|    1001 | Bit 8: IE\_N
+|   00000 | ROM address (instruction pointer)
+|   00001 | Value read from ROM
+|   00010 | Instruction register and data register
+|   00011 | Accumulator register
+|   00100 | X register
+|   00101 | Y register
+|   00110 | OUT register
+|   00111 | value on BUS
+|   01000 | Value calculated by ALU
+|   01001 | Bit 8: IE\_N
 |         | Input value
-|    1010 | SRAM address, DEAD when larger than 16 bit
-|    1011 | Value read/written from/to SRAM
-|    1100 | EXOUT value
-|    1101 | Bit 0 SRAM\_OE\_N
+|   01010 | SRAM address, DEAD when larger than 16 bit
+|   1011 | Value read/written from/to SRAM
+|   1100 | EXOUT value
+|   1101 | Bit 0 SRAM\_OE\_N
 |         | Bit 1 SRAM\_OE\_N
 |         | Bit 2 SRAM\_OE\_N requested by cpu
 |         | Bit 8 SRAM\_WE\_N
 |         | Bit 9 SRAM\_WE\_N request by cpu
-|    1110 | Bit 0: reset\_n
+|   01110 | Bit 0: reset\_n
 |         | Bit 1: clk1
 |         | Bit 2: clk2
 |         | 2 bit clk\_counter
-|    1111 | rom\_counter
+|   01111 | rom\_counter
 |         | Bit 4: insn\_ready
+|   10001 | VGA debug information
+|   10010 |
+|   10011 |
+|   10100 |
+|   10101 |
+|   10110 |
+|   10111 |
 
 The green LEDs are EXOUT; i.e. 0 to 3 are also on the gigatron TTL board.
 
 # Source of Files
-Some files were taken from Digital/src/main/dig/lib/DIL Chips/74xx/plexers/74138.dig (git https://github.com/hneemann/Digital.git 535812dacb7c34f125f8033b37db84bdb17bda4b), but include some fixes.
-74138ndelay.dig is a copy of Digital/src/main/dig/lib/DIL Chips/74xx/plexers/74138.dig, but delay was removed, because this cannot be converted to verilog.
-74244fixed.dig is a copy of Digital/src/main/dig/lib/DIL Chips/74xx/driver/74244.dig, but the ~ sign was moved to the first character, because this cannot be handled in verilog code.
+Some files were taken from other projects. Here is a table with the files:
+
+File Name (source)                                  | File Name (this project)                          | git repository                                    | Version (git commit)                     | License                         | Changes
+----------------------------------------------------|---------------------------------------------------|---------------------------------------------------|------------------------------------------|---------------------------------|----------------------------------------------------------------
+74138ndelay.dig                                     | src/main/dig/lib/DIL Chips/74xx/plexers/74138.dig | https://github.com/hneemann/Digital.git           | 535812dacb7c34f125f8033b37db84bdb17bda4b | GNU General Public License v3.0 | Delay was removed, because this cannot be converted to verilog.
+74244fixed.dig                                      | src/main/dig/lib/DIL Chips/74xx/driver/74244.dig  | https://github.com/hneemann/Digital.git           | 535812dacb7c34f125f8033b37db84bdb17bda4b | GNU General Public License v3.0 | The ~ sign was moved to the first character, because this cannot be handled in verilog code.
+AlteraCycloneIIFPGAStarterBoard/sdram\_controller.v | sdram\_controller.v                               | https://github.com/stffrdhrn/sdram-controller.git | cd6c4c511fae5f5f4df1e234037a40dde9b6b7ab | BSD | ROW\_WIDTH and COL\_WIDTH was adapted to the SDRAM on the board.
+gigatroncpu.dig                                     | ROMv6.rom                                         | https://github.com/kervinck/gigatron-rom.git      | 809b0fd834cb9ec2b219216722df4d567f65baeb | BSD 2-Clause                    | Imported into ROM
+AlteraCycloneIIFPGAStarterBoard/ROMv6.hex           | ROMv6.rom                                         | https://github.com/kervinck/gigatron-rom.git      | 809b0fd834cb9ec2b219216722df4d567f65baeb | BSD 2-Clause                    | Reverse order (16 bit). This was used for testing.

@@ -25,7 +25,21 @@ module gigatron(
 	output wire [6:0] HEX3,
 	input wire [9:0] SW,
 	input wire [3:0] KEY,
-	output reg [9:0] LEDR);
+	output reg [9:0] LEDR,
+
+	// SDRAM
+	inout wire [15:0] DRAM_DQ,
+	output wire [11:0] DRAM_ADDR,
+	output wire DRAM_LDQM,
+	output wire DRAM_UDQM,
+	output wire DRAM_WE_N,
+	output wire DRAM_CAS_N,
+	output wire DRAM_RAS_N,
+	output wire DRAM_CS_N,
+	output wire DRAM_BA_0,
+	output wire DRAM_BA_1,
+	output wire DRAM_CLK,
+	output wire DRAM_CKE);
 
 // Reset
 reg reset_n;
@@ -147,7 +161,7 @@ always @(posedge SYSCLK)
 begin
 	if (clk_counter == 3) begin
 		if (insn_rdy == 0) begin
-			rom_counter <= rom_counter + 1;
+			rom_counter <= rom_counter + 2'h1;
 			case (rom_counter)
 				0:
 					begin
@@ -179,11 +193,19 @@ begin
 end
 
 // Famiclone controller lines
-reg SER_DATA = 0;
+reg SER_DATA;
 wire SER_PULSE;
 wire SER_LATCH;
 
-initial SER_DATA = 0;
+initial begin
+	SER_DATA = 1'b1;
+end
+
+always @(posedge clk1)
+begin
+	// Set input to 8'hFF; i.e. no button is pressed.
+	SER_DATA <= 1'b1;
+end
 
 // SRAM
 reg [7:0] gigatron_sram_read_data;
@@ -237,6 +259,8 @@ wire [7:0] Input; // Input data read from gamepad (for debugging).
 wire IE_N; // Control line for reading data from gamepad (for debugging).
 
 reg [15:0] dbgval;
+wire [15:0] dbgvga;
+
 initial begin
 	dbgval = 16'hDEAD;
 end
@@ -250,56 +274,59 @@ segment7 seg3(.HEXLED(HEX3), .VALUE(dbgval[15:12]), .CLK(CLOCK_50));
 always @(posedge CLOCK_50)
 begin
 	LEDR <= SW;
-	case (SW[3:0])
-		4'b0000: dbgval <= romaddr;
-		4'b0001: dbgval <= insn;
-		4'b0010: begin
+	case (SW[4:0])
+		5'b00000: begin
+			dbgval <= romaddr;
+		end
+		5'b00001: dbgval <= insn;
+		5'b00010: begin
 			dbgval[15:8] <= RegIR;
 			dbgval[7:0] <= RegDR;
 		end
-		4'b0011: begin
+		5'b00011: begin
 			dbgval[15:8] <= 0;
 			dbgval[7:0] <= RegAccu;
 		end
-		4'b0100: begin
+		5'b00100: begin
 			dbgval[15:8] <= 0;
 			dbgval[7:0] <= RegX;
 		end
-		4'b0101: begin
+		5'b00101: begin
 			dbgval[15:8] <= 0;
 			dbgval[7:0] <= RegY;
 		end
-		4'b0110: begin
+		5'b00110: begin
 			dbgval[15:8] <= 0;
 			dbgval[7:0] <= RegOUT;
 		end
-		4'b0111: begin
+		5'b00111: begin
 			dbgval[15:8] <= 0;
 			dbgval[7:0] <= BUSValue;
 		end
-		4'b1000: begin
+		5'b01000: begin
 			dbgval[15:8] = 0;
 			dbgval[7:0] = ALUValue;
 		end
-		4'b1001: begin
-			dbgval[15:7] <= 0;
+		5'b01001: begin
+			dbgval[15:10] <= 0;
+			dbgval[9] <= SER_DATA;
 			dbgval[8] <= IE_N;
 			dbgval[7:0] <= Input;
 		end
-		4'b1010: begin
+		5'b01010: begin
 			if (SRAM_ADDR < 18'h10000) begin
 				dbgval <= SRAM_ADDR[15:0];
 			end else begin
 				dbgval <= 16'hdead;
 			end
 		end
-		4'b1011: begin
+		5'b01011: begin
 			dbgval <= SRAM_DQ;
 		end
-		4'b1100: begin
+		5'b01100: begin
 			dbgval <= EXOUT;
 		end
-		4'b1101: begin
+		5'b01101: begin
 			dbgval[0] <= SRAM_OE_N;
 			dbgval[1] <= gigatron_sram_oe_n;
 			dbgval[7:2] <= 0;
@@ -307,16 +334,40 @@ begin
 			dbgval[9] <= gigatron_sram_we_n;
 			dbgval[15:10] <= 0;
 		end
-		4'b1110: begin
+		5'b01110: begin
 			dbgval[0] <= reset_n;
 			dbgval[1] <= clk1;
 			dbgval[2] <= clk2;
 			dbgval[7:3] <= 0;
 			dbgval[15:8] <= clk_counter;
 		end
-		4'b1111: begin
+		5'b01111: begin
 			dbgval[3:0] <= rom_counter;
 			dbgval[7:4] <= insn_rdy;
+		end
+		5'b10000: begin
+			dbgval <= dbgvga;
+		end
+		5'b10001: begin
+			dbgval <= dbgvga;
+		end
+		5'b10010: begin
+			dbgval <= dbgvga;
+		end
+		5'b10011: begin
+			dbgval <= dbgvga;
+		end
+		5'b10100: begin
+			dbgval <= dbgvga;
+		end
+		5'b10101: begin
+			dbgval <= dbgvga;
+		end
+		5'b10110: begin
+			dbgval <= dbgvga;
+		end
+		5'b10111: begin
+			dbgval <= dbgvga;
 		end
 		default: dbgval <= 16'hDEAD;
 
@@ -383,6 +434,54 @@ gigatroncpu cpu(
 	IE_N
 );
 
+// SDRAM
+wire [1:0] bank_addr;
+
+assign DRAM_BA_1 = bank_addr[1];
+assign DRAM_BA_0 = bank_addr[0];
+
+wire [21:0] wr_addr;
+wire [15:0] wr_data;
+wire wr_enable;
+
+wire [21:0] rd_addr;
+wire [15:0] rd_data;
+wire rd_ready;
+wire rd_enable;
+
+wire busy;
+wire clk;
+
+assign clk = CLOCK_50;
+assign DRAM_CLK = CLOCK_50;
+
+sdram_controller sdram(
+	 /* HOST INTERFACE */
+    .wr_addr(wr_addr),
+    .wr_data(wr_data),
+    .wr_enable(wr_enable),
+
+    .rd_addr(rd_addr),
+    .rd_data(rd_data),
+    .rd_ready(rd_ready),
+    .rd_enable(rd_enable),
+
+    .busy(busy),
+	 .rst_n(reset_n),
+	 .clk(clk),
+
+    /* SDRAM SIDE */
+    .addr(DRAM_ADDR),
+	 .bank_addr(bank_addr),
+	 .data(DRAM_DQ),
+	 .clock_enable(DRAM_CKE),
+	 .cs_n(DRAM_CS_N),
+	 .ras_n(DRAM_RAS_N),
+	 .cas_n(DRAM_CAS_N),
+	 .we_n(DRAM_WE_N),
+    .data_mask_low(DRAM_LDQM),
+	 .data_mask_high(DRAM_UDQM));
+
 vgadrv vga(
 	CLOCK_50,
 	VGA_R,
@@ -398,6 +497,23 @@ vgadrv vga(
 	gigatron_vga_g,
 	gigatron_vga_b,
 	gigatron_vga_hs,
-	gigatron_vga_vs);
+	gigatron_vga_vs,
+
+	// RAM write
+	wr_addr,
+	wr_data,
+	wr_enable,
+
+	// RAM read
+	rd_addr,
+	rd_data,
+	rd_ready,
+	rd_enable,
+
+	busy,
+
+	// Debug
+	dbgvga,
+	SW[2:0]);
 
 endmodule
