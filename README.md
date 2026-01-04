@@ -87,6 +87,10 @@ KEY3 and KEY2 change function dependeing on SW[1:0].
 |      10 | SELECT | START
 |      11 | A      | B
 
+## PS/2 Keyboard
+The DE1 board has a PS/2 connector. A keyboard can be connected. The layout is mainly German with some support for American.
+See PS/2 Keyboard decoder in file AlteraCycloneIIFPGAStarterBoard/ps2controller.v.
+
 ## Limitations
 The ROM access on the board is too slow.
 Flash has only 8 bit data lines connected, so 2 accesses are needed for reading the instruction (2 * 70 ns required).

@@ -39,7 +39,11 @@ module gigatron(
 	output wire DRAM_BA_0,
 	output wire DRAM_BA_1,
 	output wire DRAM_CLK,
-	output wire DRAM_CKE);
+	output wire DRAM_CKE,
+
+	// PS/2
+	input wire PS2_CLK,
+	input wire PS2_DAT);
 
 // Reset
 reg reset_n;
@@ -195,46 +199,53 @@ end
 // Famiclone controller lines
 wire SER_PULSE;
 wire SER_LATCH;
+reg SER_DATA;
 
-reg [8:0] gamepad_data;
+reg [7:0] gamepad_data;
+reg ps2_sending;
+reg [2:0] gamepad_bit;
 
-initial begin
-	gamepad_data = 8'hFE;
-end
+reg ser_latch_s0;
+reg ser_latch_s1;
+reg ser_pulse_s0;
+reg ser_pulse_s1;
 
-always @(posedge SER_LATCH or posedge SER_PULSE)
+wire ser_latch_rise = ser_latch_s0 & ~ser_latch_s1;
+wire ser_pulse_rise = ser_pulse_s0 & ~ser_pulse_s1;
+
+always @(posedge CLOCK_50)
 begin
-	if (SER_LATCH) begin
-		gamepad_data[7:0] <= 8'hff;
+	SER_DATA <= gamepad_data[gamepad_bit];
 
-		case (SW[1:0])
-			2'b00: begin
-				gamepad_data[3:2] <= KEY[3:2];
-			end
-
-			2'b01: begin
-				gamepad_data[1:0] <= KEY[3:2];
-			end
-
-			2'b10: begin
-				gamepad_data[5:4] <= KEY[3:2];
-			end
-
-			2'b11: begin
-				gamepad_data[7:6] <= KEY[3:2];
-			end
-		endcase
-
-		gamepad_data[7] <= KEY[1];
+	if (!reset_n) begin
+		ser_latch_s0 <= 1'b0;
+		ser_latch_s1 <= 1'b0;
+		ser_pulse_s0 <= 1'b0;
+		ser_pulse_s1 <= 1'b0;
+		gamepad_data = 8'hFF;
+		ps2_sending = 1'b0;
+		gamepad_bit = 3'h0;
 	end else begin
-		gamepad_data[0] <= 1'b0;
-		gamepad_data[1] <= gamepad_data[0];
-		gamepad_data[2] <= gamepad_data[1];
-		gamepad_data[3] <= gamepad_data[2];
-		gamepad_data[4] <= gamepad_data[3];
-		gamepad_data[5] <= gamepad_data[4];
-		gamepad_data[6] <= gamepad_data[5];
-		gamepad_data[7] <= gamepad_data[6];
+		if (ser_latch_rise) begin
+			gamepad_bit <= 3'h0;
+			if (ps2_ready) begin
+				gamepad_data <= ps2_data;
+				ps2_sending <= 1'b1;
+			end else begin
+				gamepad_data <= key_data;
+			end
+		end else if (ser_pulse_rise) begin
+			if (gamepad_bit == 4'h0) begin
+				ps2_sending <= 1'b0;
+			end
+
+			gamepad_bit <= gamepad_bit - 3'h1;
+		end
+
+		ser_latch_s0 <= SER_LATCH;
+		ser_latch_s1 <= ser_latch_s0;
+		ser_pulse_s0 <= SER_PULSE;
+		ser_pulse_s1 <= ser_pulse_s0;
 	end
 end
 
@@ -276,6 +287,48 @@ end
 // EXOUT
 wire [7:0] EXOUT;
 assign LEDG = EXOUT;
+
+// Key Controller
+wire [7:0] key_data;
+
+keycontroller keyctrl(
+	CLOCK_50,
+	clk1,
+	clk2,
+	reset_n,
+
+	// Buttons
+	KEY,
+	SW[1:0],
+
+	// Output key codes
+	key_data);
+
+// PS2 Controller
+wire [7:0] ps2_data;
+wire ps2_ready;
+wire [15:0] ps2_dbg;
+
+ps2controller ps2ctrl(
+	CLOCK_50,
+	clk1,
+	clk2,
+	reset_n,
+
+	// Debug
+	SW[2:0],
+	ps2_dbg,
+
+	// PS/2
+	PS2_CLK,
+	PS2_DAT,
+
+	// Output key codes
+	ps2_data,
+	ps2_ready,
+
+	// Ack
+	ps2_sending);
 
 // Debug Output
 wire [7:0] RegIR; // Instruction Register Value
@@ -407,6 +460,38 @@ begin
 		5'b10111: begin
 			dbgval <= dbgvga;
 		end
+
+		5'b11000: begin
+			dbgval[15:0] <= ps2_dbg;
+		end
+		5'b11001: begin
+			dbgval[15:0] <= ps2_dbg;
+		end
+
+		5'b11010: begin
+			dbgval[15:0] <= ps2_dbg;
+		end
+
+		5'b11011: begin
+			dbgval[15:0] <= ps2_dbg;
+		end
+
+		5'b11100: begin
+			dbgval[15:0] <= ps2_dbg;
+		end
+
+		5'b11101: begin
+			dbgval[15:0] <= ps2_dbg;
+		end
+
+		5'b11110: begin
+			dbgval[15:0] <= ps2_dbg;
+		end
+
+		5'b11111: begin
+			dbgval[15:0] <= ps2_dbg;
+		end
+
 		default: dbgval <= 16'hDEAD;
 
 	endcase
@@ -434,7 +519,7 @@ gigatroncpu cpu(
 	gigatron_sram_read_data,
 
 	// Controller
-	gamepad_data[7], /* SER_DATA */
+	SER_DATA,
 
 	// ROM
 	romaddr,
