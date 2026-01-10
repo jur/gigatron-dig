@@ -270,9 +270,9 @@ begin
 					keycode <= 8'h7B; // {
 				end else begin
 					if (ps2_shift != 0) begin
-						keycode <= 8'h37; // 7
-					end else begin
 						keycode <= 8'h2F; // /
+					end else begin
+						keycode <= 8'h37; // 7
 					end
 				end
 			end
