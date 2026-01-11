@@ -122,7 +122,7 @@ This buffer is written to SDRAM.
 There is another buffer (rdata) where the data written to the VGA connector is stored. This is read from SDRAM.
 The gigatron ROMv6 changes the length of the VSYNC to transmit data. This is not supported.
 The black lines are not displayed, but always a full picture. So when you increase the number of black lines, you will not notice it.
-So you can increase the speed without loosing the pciture quality.
+So you can increase the speed without loosing the picture quality.
 
 ## Board Configuration
 The switches can be used to configure the board:
@@ -131,8 +131,7 @@ The switches can be used to configure the board:
 |---------|--------------------------------------------
 |   SW[9] | Enable clock -> ON
 | SW[8:5] | Configure clock frequency
-|   SW[4] | unused
-| SW[3:0] | Configure displayed value on 7 segment LEDs
+| SW[4:0] | Configure displayed value on 7 segment LEDs
 
 | SW[8:5] | Frequency | CPU       | ROM Access time
 |---------|-----------|-----------|----------------
