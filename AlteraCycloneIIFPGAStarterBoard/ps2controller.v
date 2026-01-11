@@ -106,70 +106,59 @@ begin
 end
 
 reg [7:0] kbd_cnt;
-reg [7:0] ps2_txbuf[16];
-reg [3:0] txpos;
-reg [3:0] rxpos;
-reg ps2_sending_d;
-
-wire ps2_sending_rise = ps2_sending & ~ps2_sending_d;
+reg [7:0] txbuffer;
 
 // TX Buffer handling 
 always @(posedge CLOCK_50)
 begin
 	if (!reset_n) begin
 		kbd_cnt <= 8'h00;
-		txpos <= 0;
-		rxpos <= 0;
-		ps2_sending_d <= 1'b0;
+		txbuffer <= 8'hFF;
 	end else begin
 		// Fill TX buffer:
 		if (kbd_cnt != ps2_decode_cnt) begin
-			if (keycode != 8'hFF) begin
-				ps2_txbuf[txpos] <= keycode;
-				ps2_ready <= 1'b1;
-				txpos <= txpos + 4'h1;
-			end
+			txbuffer <= keycode;
+
 			kbd_cnt <= ps2_decode_cnt;
 		end
 
 		// Get keycodes from TX buffer:
-		if (rxpos == txpos) begin
-			// TX buffer empty
-			ps2_data <= 8'hFF;
+		ps2_data <= txbuffer;
+		if (txbuffer == 8'hFF) begin
 			ps2_ready <= 1'b0;
 		end else begin
-			ps2_data <= ps2_txbuf[rxpos];
 			ps2_ready <= 1'b1;
-
-			if (ps2_sending_rise) begin
-				// Get next
-				rxpos <= rxpos + 4'h1;
-			end
 		end
-
-		ps2_sending_d <= ps2_sending;
 	end
 end
 
 // PS/2 Keyboard decoder
 reg [7:0] keycode;
-reg [1:0] ps2_shift;
+reg [2:0] ps2_shift;
 reg [1:0] ps2_alt;
+reg [1:0] ps2_ctrl;
 reg [7:0] ps2_decode_cnt;
 
 always @(posedge CLOCK_50)
 begin
 	if (!reset_n) begin
-		ps2_shift <= 2'b00;
+		ps2_shift <= 3'b000;
 		ps2_alt <= 2'b00;
 		ps2_decode_cnt <= 8'h00;
+		ps2_ctrl <= 2'b00;
 	end else begin
 		ps2_decode_cnt <= ps2_rx_cnt;
 		keycode[7:0] <= 8'hff;
 
 		case (ps2_rxbuf[0])
 			8'h5A: keycode <= 8'h0a; // ENTER
-			8'h29: keycode <= 8'h20; // SPACE
+			8'h29: begin
+				if (ps2_ctrl != 0) begin
+					keycode <= 8'h00; // 0 Byte
+				end else begin
+					keycode <= 8'h20; // SPACE
+				end
+			end
 			8'h0E: keycode <= 8'h5E; // ^
 			8'h55: begin
 				if (ps2_shift != 0) begin
@@ -520,10 +509,35 @@ begin
 				end
 			end
 
-			8'h66: keycode <= 8'h7F; // BACKSPACE
+			8'h66: begin
+				if ((ps2_alt != 0) && (ps2_ctrl != 0)) begin
+					keycode <= 8'hEF; // CTRL + ALT + BACKSPACE -> START button
+				end else begin
+					keycode <= 8'h7F; // BACKSPACE
+				end
+			end
+
+			8'h7C: keycode <= 8'h2A; // NUMPAD *
+			8'h7B: keycode <= 8'h2D; // NUMPAD -
+			8'h79: keycode <= 8'h2B; // NUMPAD +
+			8'h71: keycode <= 8'h2C; // NUMPAD ,
+			8'h70: keycode <= 8'h30; // NUMPAD 0
+			8'h69: keycode <= 8'h31; // NUMPAD 1
+			8'h72: keycode <= 8'h32; // NUMPAD 2
+			8'h7A: keycode <= 8'h33; // NUMPAD 3
+			8'h6B: keycode <= 8'h34; // NUMPAD 4
+			8'h73: keycode <= 8'h35; // NUMPAD 5
+			8'h74: keycode <= 8'h36; // NUMPAD 6
+			8'h6C: keycode <= 8'h37; // NUMPAD 7
+			8'h75: keycode <= 8'h38; // NUMPAD 8
+			8'h7D: keycode <= 8'h39; // NUMPAD 9
 
 			8'h59: begin // R SHIFT
 				ps2_shift[0] <= 1'b1;
+			end
+
+			8'h58: begin // SHIFT LOCK
+				ps2_shift[2] <= 1'b1;
 			end
 
 			8'h12: begin // L SHIFT
@@ -534,6 +548,10 @@ begin
 				ps2_alt[0] <= 1'b1;
 			end
 
+			8'h14: begin // L CTRL
+				ps2_ctrl[0] <= 1'b1;
+			end
+
 			8'hE0: begin
 					if (ps2_ext_valid[0]) begin
 						case(ps2_rxbuf[1])
@@ -541,10 +559,27 @@ begin
 							8'h72: keycode <= 8'hFB; // down
 							8'h6B: keycode <= 8'hFD; // left
 							8'h74: keycode <= 8'hFE; // right
-							8'h71: keycode <= 8'h7F; // DEL
+							8'h69: keycode <= 8'h7F; // END -> A button
+							8'h70: keycode <= 8'hBF; // INSERT -> B button
+							8'h6C: keycode <= 8'hBF; // HOME -> B button
+							8'h7A: keycode <= 8'hDF; // PAGE DOWN -> SELECT
+							8'h7D: keycode <= 8'hEF; // PAGE UP -> START button
+							8'h4A: keycode <= 8'h2F; // NUMPAD /
+							8'h5A: keycode <= 8'h0a; // NUMPAD ENTER
+							8'h71: begin
+								if ((ps2_alt != 0) && (ps2_ctrl != 0)) begin
+									keycode <= 8'hEF; // CTRL + ALT + DEL -> START button
+								end else begin
+									keycode <= 8'h7F; // DEL -> A button
+								end
+							end
 
 							8'h11: begin // R ALT
 								ps2_alt[1] <= 1'b1;
+							end
+
+							8'h14: begin // L CTRL
+								ps2_ctrl[1] <= 1'b1;
 							end
 
 
@@ -553,6 +588,10 @@ begin
 									case(ps2_rxbuf[2])
 										8'h11: begin // R ALT
 											ps2_alt[1] <= 1'b0;
+										end
+
+										8'h14: begin // L CTRL
+											ps2_ctrl[1] <= 1'b0;
 										end
 									endcase
 								end
@@ -569,12 +608,20 @@ begin
 								ps2_shift[0] <= 1'b0;
 							end
 
+							8'h58: begin // SHIFT LOCK
+								ps2_shift[2] <= 1'b0;
+							end
+
 							8'h12: begin // L SHIFT
 								ps2_shift[1] <= 1'b0;
 							end
 
 							8'h11: begin // L ALT
 								ps2_alt[0] <= 1'b0;
+							end
+
+							8'h14: begin // L CTRL
+								ps2_ctrl[0] <= 1'b0;
 							end
 						endcase
 					end
@@ -606,25 +653,28 @@ begin
 			end
 
 			3'b011: begin
-				ps2_dbg[15:8] <= txpos;
-				ps2_dbg[7:0] <= rxpos;
+				ps2_dbg[15:12] <= ps2_bit;
+				ps2_dbg[11] <= 0;
+				ps2_dbg[10:0] <= ps2_dat_fifo;
 			end
 
 			3'b100: begin
-				ps2_dbg[15:8] <= ps2_bit;
+				ps2_dbg[15:13] <= ps2_shift;
+				ps2_dbg[12:11] <= ps2_alt;
+				ps2_dbg[10:9] <= ps2_ctrl;
+				ps2_dbg[8] <= 0;
 				ps2_dbg[7:0] <= keycode;
 			end
 
 			3'b101: begin
-				ps2_dbg[15:8] <= ps2_txbuf[1];
-				ps2_dbg[7:0] <= ps2_txbuf[0];
+				ps2_dbg[15:8] <= 0;
+				ps2_dbg[7:0] <= txbuffer;
 			end
 
 			3'b110: begin
 				ps2_dbg[0] <= ps2_ready;
 				ps2_dbg[1] <= ps2_sending;
-				ps2_dbg[3:2] <= 0;
-				ps2_dbg[7:4] <= rxpos;
+				ps2_dbg[7:2] <= 0;
 				ps2_dbg[15:8] <= ps2_data;
 			end
 

@@ -353,54 +353,6 @@ module \74244fixed  (
   );
 endmodule
 
-// hex inverter, Schmitt trigger
-module \7414  (
-  input \1A ,
-  input \2A ,
-  input \3A ,
-  input \4A ,
-  input \5A ,
-  input \6A ,
-  input VCC,
-  input GND,
-  output \1Y ,
-  output \2Y ,
-  output \3Y ,
-  output \4Y ,
-  output \5Y ,
-  output \6Y 
-);
-  assign \1Y  = ~ \1A ;
-  assign \2Y  = ~ \2A ;
-  assign \3Y  = ~ \3A ;
-  assign \4Y  = ~ \4A ;
-  assign \5Y  = ~ \5A ;
-  assign \6Y  = ~ \6A ;
-endmodule
-
-// quad 2-input OR gate
-module \7432  (
-  input \1A ,
-  input \1B ,
-  input \2A ,
-  input \2B ,
-  input \3B ,
-  input \3A ,
-  input \4A ,
-  input \4B ,
-  input VCC,
-  input GND,
-  output \1Y ,
-  output \2Y ,
-  output \3Y ,
-  output \4Y 
-);
-  assign \1Y  = (\1A  | \1B );
-  assign \2Y  = (\2A  | \2B );
-  assign \3Y  = (\3A  | \3B );
-  assign \4Y  = (\4A  | \4B );
-endmodule
-
 module Mux_2x1_NBits #(
     parameter Bits = 2
 )
@@ -618,50 +570,27 @@ module \74153  (
   assign \1Y  = (~ \1G  & s2);
 endmodule
 
-// 4-bit binary full adder, alternative pinning
-module \74283  (
-  input C0,
-  input B1,
-  input B2,
-  input B3,
-  input B4,
-  input A1,
-  input A2,
-  input A3,
-  input A4,
+// quad 2-input OR gate
+module \7432  (
+  input \1A ,
+  input \1B ,
+  input \2A ,
+  input \2B ,
+  input \3B ,
+  input \3A ,
+  input \4A ,
+  input \4B ,
   input VCC,
   input GND,
-  output S1,
-  output S2,
-  output S3,
-  output S4,
-  output C4
+  output \1Y ,
+  output \2Y ,
+  output \3Y ,
+  output \4Y 
 );
-  wire [3:0] s0;
-  wire [3:0] s5;
-  wire [3:0] s6;
-  assign s5[0] = B1;
-  assign s5[1] = B2;
-  assign s5[2] = B3;
-  assign s5[3] = B4;
-  assign s0[0] = A1;
-  assign s0[1] = A2;
-  assign s0[2] = A3;
-  assign s0[3] = A4;
-  DIG_Add #(
-    .Bits(4)
-  )
-  DIG_Add_i0 (
-    .a( s0 ),
-    .b( s5 ),
-    .c_i( C0 ),
-    .s( s6 ),
-    .c_o( C4 )
-  );
-  assign S1 = s6[0];
-  assign S2 = s6[1];
-  assign S3 = s6[2];
-  assign S4 = s6[3];
+  assign \1Y  = (\1A  | \1B );
+  assign \2Y  = (\2A  | \2B );
+  assign \3Y  = (\3A  | \3B );
+  assign \4Y  = (\4A  | \4B );
 endmodule
 module DIG_D_FF_1bit
 #(
@@ -1050,6 +979,130 @@ module \74595  (
   assign \Q_H'  = \Q_H'_temp ;
 endmodule
 
+module Driver
+(
+    input in,
+    input sel,
+    output out
+);
+    assign out = (sel == 1'b1)? ~in : 1'bz;
+endmodule
+
+// Octal buffer/line driver; 3-state; inverting
+module \74240  (
+  input \1A0 ,
+  input \~1OE ,
+  input \1A1 ,
+  input \1A2 ,
+  input \1A3 ,
+  input \2A0 ,
+  input \~2OE ,
+  input \2A1 ,
+  input \2A2 ,
+  input \2A3 ,
+  input VCC,
+  input GND,
+  output \1Y0 ,
+  output \1Y1 ,
+  output \1Y2 ,
+  output \1Y3 ,
+  output \2Y0 ,
+  output \2Y1 ,
+  output \2Y2 ,
+  output \2Y3 
+);
+  wire s0;
+  wire s1;
+  assign s0 = ~ \~1OE ;
+  assign s1 = ~ \~2OE ;
+  Driver Driver_i0 (
+    .in( \1A0  ),
+    .sel( s0 ),
+    .out( \1Y0  )
+  );
+  Driver Driver_i1 (
+    .in( \1A1  ),
+    .sel( s0 ),
+    .out( \1Y1  )
+  );
+  Driver Driver_i2 (
+    .in( \1A2  ),
+    .sel( s0 ),
+    .out( \1Y2  )
+  );
+  Driver Driver_i3 (
+    .in( \1A3  ),
+    .sel( s0 ),
+    .out( \1Y3  )
+  );
+  Driver Driver_i4 (
+    .in( \2A0  ),
+    .sel( s1 ),
+    .out( \2Y0  )
+  );
+  Driver Driver_i5 (
+    .in( \2A1  ),
+    .sel( s1 ),
+    .out( \2Y1  )
+  );
+  Driver Driver_i6 (
+    .in( \2A2  ),
+    .sel( s1 ),
+    .out( \2Y2  )
+  );
+  Driver Driver_i7 (
+    .in( \2A3  ),
+    .sel( s1 ),
+    .out( \2Y3  )
+  );
+endmodule
+
+// 4-bit binary full adder, alternative pinning
+module \74283  (
+  input C0,
+  input B1,
+  input B2,
+  input B3,
+  input B4,
+  input A1,
+  input A2,
+  input A3,
+  input A4,
+  input VCC,
+  input GND,
+  output S1,
+  output S2,
+  output S3,
+  output S4,
+  output C4
+);
+  wire [3:0] s0;
+  wire [3:0] s5;
+  wire [3:0] s6;
+  assign s5[0] = B1;
+  assign s5[1] = B2;
+  assign s5[2] = B3;
+  assign s5[3] = B4;
+  assign s0[0] = A1;
+  assign s0[1] = A2;
+  assign s0[2] = A3;
+  assign s0[3] = A4;
+  DIG_Add #(
+    .Bits(4)
+  )
+  DIG_Add_i0 (
+    .a( s0 ),
+    .b( s5 ),
+    .c_i( C0 ),
+    .s( s6 ),
+    .c_o( C4 )
+  );
+  assign S1 = s6[0];
+  assign S2 = s6[1];
+  assign S3 = s6[2];
+  assign S4 = s6[3];
+endmodule
+
 module gigatroncpu (
   input CLK1,
   input CLK2,
@@ -1191,28 +1244,21 @@ module gigatroncpu (
   wire AC5;
   wire AC6;
   wire AC7;
-  wire \~AR0 ;
-  wire \~AR1 ;
-  wire \~AR2 ;
-  wire INV_B_OUT;
-  wire INV_B_IN;
-  wire s20;
-  wire INV_A_IN;
-  wire \~AR3 ;
-  wire INV_C_IN;
-  wire INV_C_OUT;
-  wire \~AL ;
   wire JUMP_INSN;
+  wire INV_C_IN;
+  wire INV_B_IN;
   wire \~WE_SRAM_temp ;
   wire OL_INSN;
+  wire INV_B_OUT;
   wire \~OL ;
   wire \~LD ;
   wire LD_INSN;
-  wire s21;
+  wire s20;
   wire \~DE ;
   wire \~OE_SRAM_temp ;
   wire \~AE ;
   wire \~IE_temp ;
+  wire s21;
   wire \~XL ;
   wire s22;
   wire X7;
@@ -1270,13 +1316,20 @@ module gigatroncpu (
   wire s24;
   wire s25;
   wire s26;
+  wire \~AR3 ;
   wire s27;
+  wire \~AR2 ;
   wire s28;
+  wire \~AR1 ;
+  wire \~AR0 ;
+  wire \~AL ;
   wire s29;
   wire s30;
+  wire INV_A_IN;
   wire s31;
   wire s32;
   wire s33;
+  wire INV_C_OUT;
   wire DEBUS0;
   wire DEBUS1;
   wire DEBUS2;
@@ -1395,7 +1448,7 @@ module gigatroncpu (
     .\~1Y1 ( \~OE_SRAM_temp  ),
     .\~1Y2 ( \~AE  ),
     .\~1Y3 ( \~IE_temp  ),
-    .\~2Y0 ( s21 )
+    .\~2Y0 ( s20 )
   );
   // Operation Decoder
   \74138ndelay  \74138ndelay_i3 (
@@ -1495,23 +1548,6 @@ module gigatroncpu (
     .\1Y2 ( DEBUS7 ),
     .\1Y1 ( DEBUS6 )
   );
-  // Buffer/Inverter 1
-  \7414  \7414_i6 (
-    .\1A ( \~AR0  ),
-    .\2A ( \~AR1  ),
-    .\3A ( \~AR2  ),
-    .GND( 1'b0 ),
-    .\4A ( INV_B_IN ),
-    .\5A ( INV_A_IN ),
-    .\6A ( \~AR3  ),
-    .VCC( 1'b1 ),
-    .\1Y ( AR0 ),
-    .\2Y ( AR1 ),
-    .\3Y ( AR2 ),
-    .\4Y ( INV_B_OUT ),
-    .\5Y ( s20 ),
-    .\6Y ( AR3 )
-  );
   assign EH = (s29 & s30 & INV_A_IN);
   assign EL = (s31 & s30 & INV_A_IN);
   assign OL_INSN = (s32 & INV_A_IN);
@@ -1524,32 +1560,8 @@ module gigatroncpu (
   assign DEBUS[5] = DEBUS5;
   assign DEBUS[6] = DEBUS6;
   assign DEBUS[7] = DEBUS7;
-  \7432  \7432_i7 (
-    .\1A ( CLK1 ),
-    .\1B ( INV_B_IN ),
-    .\2A ( OL_INSN ),
-    .\2B ( INV_B_OUT ),
-    .GND( 1'b0 ),
-    .\3A ( LD_INSN ),
-    .\3B ( INV_B_OUT ),
-    .\4A ( s21 ),
-    .\4B ( JUMP_INSN ),
-    .VCC( 1'b1 ),
-    .\1Y ( \~WE_SRAM_temp  ),
-    .\2Y ( \~OL  ),
-    .\3Y ( \~LD  ),
-    .\4Y ( PH )
-  );
-  assign s39[0] = \~WE_SRAM_temp ;
-  assign s39[1] = \~WE_SRAM_temp ;
-  assign s39[2] = \~WE_SRAM_temp ;
-  assign s39[3] = \~WE_SRAM_temp ;
-  assign s39[4] = \~WE_SRAM_temp ;
-  assign s39[5] = \~WE_SRAM_temp ;
-  assign s39[6] = \~WE_SRAM_temp ;
-  assign s39[7] = \~WE_SRAM_temp ;
   // PC 0:3
-  \74161  \74161_i8 (
+  \74161  \74161_i6 (
     .\~CLR ( \~RESET  ),
     .CLK( CLK1 ),
     .A( BUS0 ),
@@ -1568,7 +1580,7 @@ module gigatroncpu (
     .RCO( s0 )
   );
   // PC 4:7
-  \74161  \74161_i9 (
+  \74161  \74161_i7 (
     .\~CLR ( \~RESET  ),
     .CLK( CLK1 ),
     .A( BUS4 ),
@@ -1587,7 +1599,7 @@ module gigatroncpu (
     .RCO( s1 )
   );
   // PC 8:11
-  \74161  \74161_i10 (
+  \74161  \74161_i8 (
     .\~CLR ( \~RESET  ),
     .CLK( CLK1 ),
     .A( Y0 ),
@@ -1606,7 +1618,7 @@ module gigatroncpu (
     .RCO( s2 )
   );
   // PC 8:12
-  \74161  \74161_i11 (
+  \74161  \74161_i9 (
     .\~CLR ( \~RESET  ),
     .CLK( CLK1 ),
     .A( Y4 ),
@@ -1623,191 +1635,8 @@ module gigatroncpu (
     .QB( PC13 ),
     .QA( PC12 )
   );
-  // Logic Unit 3
-  \74153  \74153_i12 (
-    .\1G ( 1'b0 ),
-    .B( BUS3 ),
-    .\1C3 ( AR3 ),
-    .\1C2 ( AR2 ),
-    .\1C1 ( AR1 ),
-    .\1C0 ( AR0 ),
-    .GND( 1'b0 ),
-    .\2C0 ( 1'b0 ),
-    .\2C1 ( 1'b1 ),
-    .\2C2 ( 1'b0 ),
-    .\2C3 ( 1'b1 ),
-    .A( AC3 ),
-    .\2G ( AL ),
-    .VCC( 1'b1 ),
-    .\1Y ( s3 ),
-    .\2Y ( s4 )
-  );
-  \74283  \74283_i13 (
-    .B2( s5 ),
-    .A2( s6 ),
-    .A1( s7 ),
-    .B1( s8 ),
-    .C0( AR0 ),
-    .GND( 1'b0 ),
-    .B4( s4 ),
-    .A4( s3 ),
-    .A3( s10 ),
-    .B3( s11 ),
-    .VCC( 1'b1 ),
-    .S2( ALU1 ),
-    .S1( ALU0 ),
-    .C4( s9 ),
-    .S4( ALU3 ),
-    .S3( ALU2 )
-  );
-  // Logic Unit 2
-  \74153  \74153_i14 (
-    .\1G ( 1'b0 ),
-    .B( BUS2 ),
-    .\1C3 ( AR3 ),
-    .\1C2 ( AR2 ),
-    .\1C1 ( AR1 ),
-    .\1C0 ( AR0 ),
-    .GND( 1'b0 ),
-    .\2C0 ( 1'b0 ),
-    .\2C1 ( 1'b1 ),
-    .\2C2 ( 1'b0 ),
-    .\2C3 ( 1'b1 ),
-    .A( AC2 ),
-    .\2G ( AL ),
-    .VCC( 1'b1 ),
-    .\1Y ( s10 ),
-    .\2Y ( s11 )
-  );
-  // Logic Unit 1
-  \74153  \74153_i15 (
-    .\1G ( 1'b0 ),
-    .B( BUS1 ),
-    .\1C3 ( AR3 ),
-    .\1C2 ( AR2 ),
-    .\1C1 ( AR1 ),
-    .\1C0 ( AR0 ),
-    .GND( 1'b0 ),
-    .\2C0 ( 1'b0 ),
-    .\2C1 ( 1'b1 ),
-    .\2C2 ( 1'b0 ),
-    .\2C3 ( 1'b1 ),
-    .A( AC1 ),
-    .\2G ( AL ),
-    .VCC( 1'b1 ),
-    .\1Y ( s6 ),
-    .\2Y ( s5 )
-  );
-  // Logic Unit 0
-  \74153  \74153_i16 (
-    .\1G ( 1'b0 ),
-    .B( BUS0 ),
-    .\1C3 ( AR3 ),
-    .\1C2 ( AR2 ),
-    .\1C1 ( AR1 ),
-    .\1C0 ( AR0 ),
-    .GND( 1'b0 ),
-    .\2C0 ( 1'b0 ),
-    .\2C1 ( 1'b1 ),
-    .\2C2 ( 1'b0 ),
-    .\2C3 ( 1'b1 ),
-    .A( AC0 ),
-    .\2G ( AL ),
-    .VCC( 1'b1 ),
-    .\1Y ( s7 ),
-    .\2Y ( s8 )
-  );
-  // Logic Unit 4
-  \74153  \74153_i17 (
-    .\1G ( AL ),
-    .B( AC4 ),
-    .\1C3 ( 1'b1 ),
-    .\1C2 ( 1'b1 ),
-    .\1C1 ( 1'b0 ),
-    .\1C0 ( 1'b0 ),
-    .GND( 1'b0 ),
-    .\2C0 ( AR0 ),
-    .\2C1 ( AR2 ),
-    .\2C2 ( AR1 ),
-    .\2C3 ( AR3 ),
-    .A( BUS4 ),
-    .\2G ( 1'b0 ),
-    .VCC( 1'b1 ),
-    .\1Y ( s14 ),
-    .\2Y ( s15 )
-  );
-  // Logic Unit 5
-  \74153  \74153_i18 (
-    .\1G ( AL ),
-    .B( AC5 ),
-    .\1C3 ( 1'b1 ),
-    .\1C2 ( 1'b1 ),
-    .\1C1 ( 1'b0 ),
-    .\1C0 ( 1'b0 ),
-    .GND( 1'b0 ),
-    .\2C0 ( AR0 ),
-    .\2C1 ( AR2 ),
-    .\2C2 ( AR1 ),
-    .\2C3 ( AR3 ),
-    .A( BUS5 ),
-    .\2G ( 1'b0 ),
-    .VCC( 1'b1 ),
-    .\1Y ( s12 ),
-    .\2Y ( s13 )
-  );
-  // Logic Unit 6
-  \74153  \74153_i19 (
-    .\1G ( AL ),
-    .B( AC6 ),
-    .\1C3 ( 1'b1 ),
-    .\1C2 ( 1'b1 ),
-    .\1C1 ( 1'b0 ),
-    .\1C0 ( 1'b0 ),
-    .GND( 1'b0 ),
-    .\2C0 ( AR0 ),
-    .\2C1 ( AR2 ),
-    .\2C2 ( AR1 ),
-    .\2C3 ( AR3 ),
-    .A( BUS6 ),
-    .\2G ( 1'b0 ),
-    .VCC( 1'b1 ),
-    .\1Y ( s19 ),
-    .\2Y ( s18 )
-  );
-  // Logic Unit 7
-  \74153  \74153_i20 (
-    .\1G ( AL ),
-    .B( AC7 ),
-    .\1C3 ( 1'b1 ),
-    .\1C2 ( 1'b1 ),
-    .\1C1 ( 1'b0 ),
-    .\1C0 ( 1'b0 ),
-    .GND( 1'b0 ),
-    .\2C0 ( AR0 ),
-    .\2C1 ( AR2 ),
-    .\2C2 ( AR1 ),
-    .\2C3 ( AR3 ),
-    .A( BUS7 ),
-    .\2G ( 1'b0 ),
-    .VCC( 1'b1 ),
-    .\1Y ( s17 ),
-    .\2Y ( s16 )
-  );
-  // Buffer/Inverter 2
-  \7414  \7414_i21 (
-    .\1A ( INV_C_IN ),
-    .\2A ( \~AL  ),
-    .\3A ( 1'b0 ),
-    .GND( 1'b0 ),
-    .\4A ( 1'b0 ),
-    .\5A ( 1'b0 ),
-    .\6A ( 1'b0 ),
-    .VCC( 1'b1 ),
-    .\1Y ( INV_C_OUT ),
-    .\2Y ( AL )
-  );
   // Condition Decoder
-  \74153  \74153_i22 (
+  \74153  \74153_i10 (
     .\1G ( JUMP_INSN ),
     .B( CO ),
     .\1C3 ( 1'b0 ),
@@ -1824,38 +1653,31 @@ module gigatroncpu (
     .VCC( 1'b1 ),
     .\1Y ( INV_C_IN )
   );
-  // Accumulator
-  \74377  \74377_i23 (
-    .\~E ( \~LD  ),
-    .D0( ALU3 ),
-    .D1( ALU2 ),
-    .D2( ALU1 ),
-    .D3( ALU0 ),
+  \7432  \7432_i11 (
+    .\1A ( CLK1 ),
+    .\1B ( INV_B_IN ),
+    .\2A ( OL_INSN ),
+    .\2B ( INV_B_OUT ),
     .GND( 1'b0 ),
-    .CLK( CLK2 ),
-    .D4( ALU5 ),
-    .D5( ALU4 ),
-    .D6( ALU7 ),
-    .D7( ALU6 ),
+    .\3A ( LD_INSN ),
+    .\3B ( INV_B_OUT ),
+    .\4A ( s20 ),
+    .\4B ( JUMP_INSN ),
     .VCC( 1'b1 ),
-    .Q0( AC3 ),
-    .Q1( AC2 ),
-    .Q2( AC1 ),
-    .Q3( AC0 ),
-    .Q4( AC5 ),
-    .Q5( AC4 ),
-    .Q6( AC7 ),
-    .Q7( AC6 )
+    .\1Y ( \~WE_SRAM_temp  ),
+    .\2Y ( \~OL  ),
+    .\3Y ( \~LD  ),
+    .\4Y ( PH )
   );
   // X register high
-  \74161  \74161_i24 (
+  \74161  \74161_i12 (
     .\~CLR ( 1'b1 ),
     .CLK( CLK2 ),
     .A( ALU4 ),
     .B( ALU5 ),
     .C( ALU6 ),
     .D( ALU7 ),
-    .ENP( s20 ),
+    .ENP( s21 ),
     .GND( 1'b0 ),
     .\~LD ( \~XL  ),
     .ENT( s22 ),
@@ -1866,14 +1688,14 @@ module gigatroncpu (
     .QA( X4 )
   );
   // X register low
-  \74161  \74161_i25 (
+  \74161  \74161_i13 (
     .\~CLR ( 1'b1 ),
     .CLK( CLK2 ),
     .A( ALU0 ),
     .B( ALU1 ),
     .C( ALU2 ),
     .D( ALU3 ),
-    .ENP( s20 ),
+    .ENP( s21 ),
     .GND( 1'b0 ),
     .\~LD ( \~XL  ),
     .ENT( 1'b1 ),
@@ -1885,7 +1707,7 @@ module gigatroncpu (
     .RCO( s22 )
   );
   // Y register
-  \74377  \74377_i26 (
+  \74377  \74377_i14 (
     .\~E ( \~YL  ),
     .D0( ALU0 ),
     .D1( ALU1 ),
@@ -1907,30 +1729,7 @@ module gigatroncpu (
     .Q6( Y5 ),
     .Q7( Y4 )
   );
-  // Output register
-  \74377  \74377_i27 (
-    .\~E ( \~OL  ),
-    .D0( ALU3 ),
-    .D1( ALU2 ),
-    .D2( ALU1 ),
-    .D3( ALU0 ),
-    .GND( 1'b0 ),
-    .CLK( CLK2 ),
-    .D4( ALU4 ),
-    .D5( ALU5 ),
-    .D6( ALU6 ),
-    .D7( ALU7 ),
-    .VCC( 1'b1 ),
-    .Q0( OUT3 ),
-    .Q1( OUT2 ),
-    .Q2( OUT1 ),
-    .Q3( OUT0 ),
-    .Q4( OUT4 ),
-    .Q5( OUT5 ),
-    .Q6( SER_PULSE_temp ),
-    .Q7( SER_LATCH_temp )
-  );
-  \74157  \74157_i28 (
+  \74157  \74157_i15 (
     .S( EL ),
     .A1( X4 ),
     .B1( D4 ),
@@ -1948,7 +1747,7 @@ module gigatroncpu (
     .Y3( SRAM_A6 ),
     .Y4( SRAM_A7 )
   );
-  \74157  \74157_i29 (
+  \74157  \74157_i16 (
     .S( EL ),
     .A1( X1 ),
     .B1( D1 ),
@@ -1966,7 +1765,7 @@ module gigatroncpu (
     .Y3( SRAM_A3 ),
     .Y4( SRAM_A0 )
   );
-  \74157  \74157_i30 (
+  \74157  \74157_i17 (
     .S( 1'b0 ),
     .A1( Y5 ),
     .B1( 1'b1 ),
@@ -1984,7 +1783,7 @@ module gigatroncpu (
     .Y3( SRAM_A11 ),
     .Y4( SRAM_A9 )
   );
-  \74157  \74157_i31 (
+  \74157  \74157_i18 (
     .S( 1'b0 ),
     .A1( Y0 ),
     .B1( 1'b1 ),
@@ -2003,7 +1802,7 @@ module gigatroncpu (
     .Y4( SRAM_A12 )
   );
   // Game Controller Input
-  \74595  \74595_i32 (
+  \74595  \74595_i19 (
     .GND( 1'b0 ),
     .\~CLR ( 1'b1 ),
     .SCLK( SER_PULSE_temp ),
@@ -2020,19 +1819,9 @@ module gigatroncpu (
     .Q_H( IEBUS7 ),
     .Q_A( IEBUS0 )
   );
-  assign PL = (PH & INV_C_OUT);
   assign s35 = ((DEBUS & ~ s34) | (Input_temp & ~ s36) | (AEBUS & ~ s37) | (SRAMDATAREAD & ~ s38));
-  DriverInvBus #(
-    .Bits(8)
-  )
-  DriverInvBus_i33 (
-    .in( s40 ),
-    .sel( \~WE_SRAM_temp  ),
-    .out( SRAMDATAWRITE )
-  );
-  assign s40 = (BUSValue_temp & ~ s39);
   // BUS Gateway AC
-  \74244fixed  \74244fixed_i34 (
+  \74244fixed  \74244fixed_i20 (
     .\~1G ( \~AE  ),
     .\1A1 ( AC0 ),
     .\1A2 ( AC1 ),
@@ -2054,6 +1843,29 @@ module gigatroncpu (
     .\1Y2 ( AEBUS1 ),
     .\1Y1 ( AEBUS0 )
   );
+  // Buffer / Octal Inverter
+  \74240  \74240_i21 (
+    .\~1OE ( 1'b0 ),
+    .\1A0 ( INV_C_IN ),
+    .\1A1 ( INV_B_IN ),
+    .\1A2 ( \~AR2  ),
+    .\1A3 ( \~AR0  ),
+    .GND( 1'b0 ),
+    .\2A3 ( \~AL  ),
+    .\2A2 ( \~AR1  ),
+    .\2A1 ( INV_A_IN ),
+    .\2A0 ( \~AR3  ),
+    .\~2OE ( 1'b0 ),
+    .VCC( 1'b1 ),
+    .\2Y0 ( AR3 ),
+    .\2Y1 ( s21 ),
+    .\2Y2 ( AR1 ),
+    .\2Y3 ( AL ),
+    .\1Y3 ( AR0 ),
+    .\1Y2 ( AR2 ),
+    .\1Y1 ( INV_B_OUT ),
+    .\1Y0 ( INV_C_OUT )
+  );
   assign ROMAddress[0] = PC0;
   assign ROMAddress[1] = PC1;
   assign ROMAddress[2] = PC2;
@@ -2070,7 +1882,305 @@ module gigatroncpu (
   assign ROMAddress[13] = PC13;
   assign ROMAddress[14] = PC14;
   assign ROMAddress[15] = PC15;
-  \74283  \74283_i35 (
+  assign RegX[0] = X0;
+  assign RegX[1] = X1;
+  assign RegX[2] = X2;
+  assign RegX[3] = X3;
+  assign RegX[4] = X4;
+  assign RegX[5] = X5;
+  assign RegX[6] = X6;
+  assign RegX[7] = X7;
+  assign RegY[0] = Y0;
+  assign RegY[1] = Y1;
+  assign RegY[2] = Y2;
+  assign RegY[3] = Y3;
+  assign RegY[4] = Y4;
+  assign RegY[5] = Y5;
+  assign RegY[6] = Y6;
+  assign RegY[7] = Y7;
+  assign SRAMAddress[0] = SRAM_A0;
+  assign SRAMAddress[1] = SRAM_A1;
+  assign SRAMAddress[2] = SRAM_A2;
+  assign SRAMAddress[3] = SRAM_A3;
+  assign SRAMAddress[4] = SRAM_A4;
+  assign SRAMAddress[5] = SRAM_A5;
+  assign SRAMAddress[6] = SRAM_A6;
+  assign SRAMAddress[7] = SRAM_A7;
+  assign SRAMAddress[8] = SRAM_A8;
+  assign SRAMAddress[9] = SRAM_A9;
+  assign SRAMAddress[10] = SRAM_A10;
+  assign SRAMAddress[11] = SRAM_A11;
+  assign SRAMAddress[12] = SRAM_A12;
+  assign SRAMAddress[13] = SRAM_A13;
+  assign SRAMAddress[14] = SRAM_A14;
+  assign SRAMAddress[15] = SRAM_A15;
+  assign PL = (PH & INV_C_OUT);
+  assign Input_temp[0] = IEBUS0;
+  assign Input_temp[1] = IEBUS1;
+  assign Input_temp[2] = IEBUS2;
+  assign Input_temp[3] = IEBUS3;
+  assign Input_temp[4] = IEBUS4;
+  assign Input_temp[5] = IEBUS5;
+  assign Input_temp[6] = IEBUS6;
+  assign Input_temp[7] = IEBUS7;
+  assign AEBUS[0] = AEBUS0;
+  assign AEBUS[1] = AEBUS1;
+  assign AEBUS[2] = AEBUS2;
+  assign AEBUS[3] = AEBUS3;
+  assign AEBUS[4] = AEBUS4;
+  assign AEBUS[5] = AEBUS5;
+  assign AEBUS[6] = AEBUS6;
+  assign AEBUS[7] = AEBUS7;
+  assign s39[0] = \~WE_SRAM_temp ;
+  assign s39[1] = \~WE_SRAM_temp ;
+  assign s39[2] = \~WE_SRAM_temp ;
+  assign s39[3] = \~WE_SRAM_temp ;
+  assign s39[4] = \~WE_SRAM_temp ;
+  assign s39[5] = \~WE_SRAM_temp ;
+  assign s39[6] = \~WE_SRAM_temp ;
+  assign s39[7] = \~WE_SRAM_temp ;
+  assign BUS0 = s35[0];
+  assign BUS1 = s35[1];
+  assign BUS2 = s35[2];
+  assign BUS3 = s35[3];
+  assign BUS4 = s35[4];
+  assign BUS5 = s35[5];
+  assign BUS6 = s35[6];
+  assign BUS7 = s35[7];
+  assign BUSValue_temp[0] = BUS0;
+  assign BUSValue_temp[1] = BUS1;
+  assign BUSValue_temp[2] = BUS2;
+  assign BUSValue_temp[3] = BUS3;
+  assign BUSValue_temp[4] = BUS4;
+  assign BUSValue_temp[5] = BUS5;
+  assign BUSValue_temp[6] = BUS6;
+  assign BUSValue_temp[7] = BUS7;
+  assign s40 = (BUSValue_temp & ~ s39);
+  DriverInvBus #(
+    .Bits(8)
+  )
+  DriverInvBus_i22 (
+    .in( s40 ),
+    .sel( \~WE_SRAM_temp  ),
+    .out( SRAMDATAWRITE )
+  );
+  // Logic Unit 3
+  \74153  \74153_i23 (
+    .\1G ( 1'b0 ),
+    .B( BUS3 ),
+    .\1C3 ( AR3 ),
+    .\1C2 ( AR2 ),
+    .\1C1 ( AR1 ),
+    .\1C0 ( AR0 ),
+    .GND( 1'b0 ),
+    .\2C0 ( 1'b0 ),
+    .\2C1 ( 1'b1 ),
+    .\2C2 ( 1'b0 ),
+    .\2C3 ( 1'b1 ),
+    .A( AC3 ),
+    .\2G ( AL ),
+    .VCC( 1'b1 ),
+    .\1Y ( s3 ),
+    .\2Y ( s4 )
+  );
+  \74283  \74283_i24 (
+    .B2( s5 ),
+    .A2( s6 ),
+    .A1( s7 ),
+    .B1( s8 ),
+    .C0( AR0 ),
+    .GND( 1'b0 ),
+    .B4( s4 ),
+    .A4( s3 ),
+    .A3( s10 ),
+    .B3( s11 ),
+    .VCC( 1'b1 ),
+    .S2( ALU1 ),
+    .S1( ALU0 ),
+    .C4( s9 ),
+    .S4( ALU3 ),
+    .S3( ALU2 )
+  );
+  // Logic Unit 2
+  \74153  \74153_i25 (
+    .\1G ( 1'b0 ),
+    .B( BUS2 ),
+    .\1C3 ( AR3 ),
+    .\1C2 ( AR2 ),
+    .\1C1 ( AR1 ),
+    .\1C0 ( AR0 ),
+    .GND( 1'b0 ),
+    .\2C0 ( 1'b0 ),
+    .\2C1 ( 1'b1 ),
+    .\2C2 ( 1'b0 ),
+    .\2C3 ( 1'b1 ),
+    .A( AC2 ),
+    .\2G ( AL ),
+    .VCC( 1'b1 ),
+    .\1Y ( s10 ),
+    .\2Y ( s11 )
+  );
+  // Logic Unit 1
+  \74153  \74153_i26 (
+    .\1G ( 1'b0 ),
+    .B( BUS1 ),
+    .\1C3 ( AR3 ),
+    .\1C2 ( AR2 ),
+    .\1C1 ( AR1 ),
+    .\1C0 ( AR0 ),
+    .GND( 1'b0 ),
+    .\2C0 ( 1'b0 ),
+    .\2C1 ( 1'b1 ),
+    .\2C2 ( 1'b0 ),
+    .\2C3 ( 1'b1 ),
+    .A( AC1 ),
+    .\2G ( AL ),
+    .VCC( 1'b1 ),
+    .\1Y ( s6 ),
+    .\2Y ( s5 )
+  );
+  // Logic Unit 0
+  \74153  \74153_i27 (
+    .\1G ( 1'b0 ),
+    .B( BUS0 ),
+    .\1C3 ( AR3 ),
+    .\1C2 ( AR2 ),
+    .\1C1 ( AR1 ),
+    .\1C0 ( AR0 ),
+    .GND( 1'b0 ),
+    .\2C0 ( 1'b0 ),
+    .\2C1 ( 1'b1 ),
+    .\2C2 ( 1'b0 ),
+    .\2C3 ( 1'b1 ),
+    .A( AC0 ),
+    .\2G ( AL ),
+    .VCC( 1'b1 ),
+    .\1Y ( s7 ),
+    .\2Y ( s8 )
+  );
+  // Logic Unit 4
+  \74153  \74153_i28 (
+    .\1G ( AL ),
+    .B( AC4 ),
+    .\1C3 ( 1'b1 ),
+    .\1C2 ( 1'b1 ),
+    .\1C1 ( 1'b0 ),
+    .\1C0 ( 1'b0 ),
+    .GND( 1'b0 ),
+    .\2C0 ( AR0 ),
+    .\2C1 ( AR2 ),
+    .\2C2 ( AR1 ),
+    .\2C3 ( AR3 ),
+    .A( BUS4 ),
+    .\2G ( 1'b0 ),
+    .VCC( 1'b1 ),
+    .\1Y ( s14 ),
+    .\2Y ( s15 )
+  );
+  // Logic Unit 5
+  \74153  \74153_i29 (
+    .\1G ( AL ),
+    .B( AC5 ),
+    .\1C3 ( 1'b1 ),
+    .\1C2 ( 1'b1 ),
+    .\1C1 ( 1'b0 ),
+    .\1C0 ( 1'b0 ),
+    .GND( 1'b0 ),
+    .\2C0 ( AR0 ),
+    .\2C1 ( AR2 ),
+    .\2C2 ( AR1 ),
+    .\2C3 ( AR3 ),
+    .A( BUS5 ),
+    .\2G ( 1'b0 ),
+    .VCC( 1'b1 ),
+    .\1Y ( s12 ),
+    .\2Y ( s13 )
+  );
+  // Logic Unit 6
+  \74153  \74153_i30 (
+    .\1G ( AL ),
+    .B( AC6 ),
+    .\1C3 ( 1'b1 ),
+    .\1C2 ( 1'b1 ),
+    .\1C1 ( 1'b0 ),
+    .\1C0 ( 1'b0 ),
+    .GND( 1'b0 ),
+    .\2C0 ( AR0 ),
+    .\2C1 ( AR2 ),
+    .\2C2 ( AR1 ),
+    .\2C3 ( AR3 ),
+    .A( BUS6 ),
+    .\2G ( 1'b0 ),
+    .VCC( 1'b1 ),
+    .\1Y ( s19 ),
+    .\2Y ( s18 )
+  );
+  // Logic Unit 7
+  \74153  \74153_i31 (
+    .\1G ( AL ),
+    .B( AC7 ),
+    .\1C3 ( 1'b1 ),
+    .\1C2 ( 1'b1 ),
+    .\1C1 ( 1'b0 ),
+    .\1C0 ( 1'b0 ),
+    .GND( 1'b0 ),
+    .\2C0 ( AR0 ),
+    .\2C1 ( AR2 ),
+    .\2C2 ( AR1 ),
+    .\2C3 ( AR3 ),
+    .A( BUS7 ),
+    .\2G ( 1'b0 ),
+    .VCC( 1'b1 ),
+    .\1Y ( s17 ),
+    .\2Y ( s16 )
+  );
+  // Accumulator
+  \74377  \74377_i32 (
+    .\~E ( \~LD  ),
+    .D0( ALU3 ),
+    .D1( ALU2 ),
+    .D2( ALU1 ),
+    .D3( ALU0 ),
+    .GND( 1'b0 ),
+    .CLK( CLK2 ),
+    .D4( ALU5 ),
+    .D5( ALU4 ),
+    .D6( ALU7 ),
+    .D7( ALU6 ),
+    .VCC( 1'b1 ),
+    .Q0( AC3 ),
+    .Q1( AC2 ),
+    .Q2( AC1 ),
+    .Q3( AC0 ),
+    .Q4( AC5 ),
+    .Q5( AC4 ),
+    .Q6( AC7 ),
+    .Q7( AC6 )
+  );
+  // Output register
+  \74377  \74377_i33 (
+    .\~E ( \~OL  ),
+    .D0( ALU3 ),
+    .D1( ALU2 ),
+    .D2( ALU1 ),
+    .D3( ALU0 ),
+    .GND( 1'b0 ),
+    .CLK( CLK2 ),
+    .D4( ALU4 ),
+    .D5( ALU5 ),
+    .D6( ALU6 ),
+    .D7( ALU7 ),
+    .VCC( 1'b1 ),
+    .Q0( OUT3 ),
+    .Q1( OUT2 ),
+    .Q2( OUT1 ),
+    .Q3( OUT0 ),
+    .Q4( OUT4 ),
+    .Q5( OUT5 ),
+    .Q6( SER_PULSE_temp ),
+    .Q7( SER_LATCH_temp )
+  );
+  \74283  \74283_i34 (
     .B2( s12 ),
     .A2( s13 ),
     .A1( s14 ),
@@ -2088,7 +2198,7 @@ module gigatroncpu (
     .S4( ALU7 ),
     .S3( ALU6 )
   );
-  \74273  \74273_i36 (
+  \74273  \74273_i35 (
     .\~MR ( 1'b1 ),
     .D0( AC3 ),
     .D1( AC2 ),
@@ -2130,22 +2240,6 @@ module gigatroncpu (
   assign RegAccu[5] = AC5;
   assign RegAccu[6] = AC6;
   assign RegAccu[7] = AC7;
-  assign RegX[0] = X0;
-  assign RegX[1] = X1;
-  assign RegX[2] = X2;
-  assign RegX[3] = X3;
-  assign RegX[4] = X4;
-  assign RegX[5] = X5;
-  assign RegX[6] = X6;
-  assign RegX[7] = X7;
-  assign RegY[0] = Y0;
-  assign RegY[1] = Y1;
-  assign RegY[2] = Y2;
-  assign RegY[3] = Y3;
-  assign RegY[4] = Y4;
-  assign RegY[5] = Y5;
-  assign RegY[6] = Y6;
-  assign RegY[7] = Y7;
   assign RegOUT[0] = OUT0;
   assign RegOUT[1] = OUT1;
   assign RegOUT[2] = OUT2;
@@ -2154,54 +2248,6 @@ module gigatroncpu (
   assign RegOUT[5] = OUT5;
   assign RegOUT[6] = SER_PULSE_temp;
   assign RegOUT[7] = SER_LATCH_temp;
-  assign SRAMAddress[0] = SRAM_A0;
-  assign SRAMAddress[1] = SRAM_A1;
-  assign SRAMAddress[2] = SRAM_A2;
-  assign SRAMAddress[3] = SRAM_A3;
-  assign SRAMAddress[4] = SRAM_A4;
-  assign SRAMAddress[5] = SRAM_A5;
-  assign SRAMAddress[6] = SRAM_A6;
-  assign SRAMAddress[7] = SRAM_A7;
-  assign SRAMAddress[8] = SRAM_A8;
-  assign SRAMAddress[9] = SRAM_A9;
-  assign SRAMAddress[10] = SRAM_A10;
-  assign SRAMAddress[11] = SRAM_A11;
-  assign SRAMAddress[12] = SRAM_A12;
-  assign SRAMAddress[13] = SRAM_A13;
-  assign SRAMAddress[14] = SRAM_A14;
-  assign SRAMAddress[15] = SRAM_A15;
-  assign Input_temp[0] = IEBUS0;
-  assign Input_temp[1] = IEBUS1;
-  assign Input_temp[2] = IEBUS2;
-  assign Input_temp[3] = IEBUS3;
-  assign Input_temp[4] = IEBUS4;
-  assign Input_temp[5] = IEBUS5;
-  assign Input_temp[6] = IEBUS6;
-  assign Input_temp[7] = IEBUS7;
-  assign AEBUS[0] = AEBUS0;
-  assign AEBUS[1] = AEBUS1;
-  assign AEBUS[2] = AEBUS2;
-  assign AEBUS[3] = AEBUS3;
-  assign AEBUS[4] = AEBUS4;
-  assign AEBUS[5] = AEBUS5;
-  assign AEBUS[6] = AEBUS6;
-  assign AEBUS[7] = AEBUS7;
-  assign BUS0 = s35[0];
-  assign BUS1 = s35[1];
-  assign BUS2 = s35[2];
-  assign BUS3 = s35[3];
-  assign BUS4 = s35[4];
-  assign BUS5 = s35[5];
-  assign BUS6 = s35[6];
-  assign BUS7 = s35[7];
-  assign BUSValue_temp[0] = BUS0;
-  assign BUSValue_temp[1] = BUS1;
-  assign BUSValue_temp[2] = BUS2;
-  assign BUSValue_temp[3] = BUS3;
-  assign BUSValue_temp[4] = BUS4;
-  assign BUSValue_temp[5] = BUS5;
-  assign BUSValue_temp[6] = BUS6;
-  assign BUSValue_temp[7] = BUS7;
   assign ALUValue[0] = ALU0;
   assign ALUValue[1] = ALU1;
   assign ALUValue[2] = ALU2;

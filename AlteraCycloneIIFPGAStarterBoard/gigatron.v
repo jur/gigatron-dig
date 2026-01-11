@@ -123,6 +123,13 @@ begin
 					sram_we_clk_n <= 1'b1;
 				end
 		endcase
+
+		if (clk_counter == 3) begin
+			// Check RESET Button
+			if ((KEY[3:2] == 2'b00) || (KEY[0] == 1'b0)) begin
+				reset_n <= 1'b0;
+			end
+		end
 	end
 end
 
@@ -163,36 +170,43 @@ end
 // The VGA timing will be bad, because of that delay.
 always @(posedge SYSCLK)
 begin
-	if (clk_counter == 3) begin
-		if (insn_rdy == 0) begin
-			rom_counter <= rom_counter + 2'h1;
-			case (rom_counter)
-				0:
-					begin
-						FL_ADDR[17] = 0;
-						FL_ADDR[16:1] <= romaddr;
-						FL_ADDR[0] <= 0;
-						insn <= 0;
-					end
-				1:
-					begin
-						insn[7:0] <= FL_DQ[7:0];
-						FL_ADDR[0] <= 1;
-					end
-				2:
-					begin
-						insn[15:8] <= FL_DQ[7:0];
-						//romdata[romaddr] <= insn;
-						insn_rdy <= 1;
-					end
-			endcase
-		end
-	end else if (clk_counter == 1) begin
-		// ROM data must be valid until clk1 is low. Then we can reset the values:
+	if (!reset_n) begin
 		insn <= 16'h0;
-		FL_ADDR <= 22'h0;
 		insn_rdy <= 0;
+		FL_ADDR <= 22'h0;
 		rom_counter <= 0;
+	end else begin
+		if (clk_counter == 3) begin
+			if (insn_rdy == 0) begin
+				rom_counter <= rom_counter + 2'h1;
+				case (rom_counter)
+					0:
+						begin
+							FL_ADDR[17] = 0;
+							FL_ADDR[16:1] <= romaddr;
+							FL_ADDR[0] <= 0;
+							insn <= 0;
+						end
+					1:
+						begin
+							insn[7:0] <= FL_DQ[7:0];
+							FL_ADDR[0] <= 1;
+						end
+					2:
+						begin
+							insn[15:8] <= FL_DQ[7:0];
+							//romdata[romaddr] <= insn;
+							insn_rdy <= 1;
+						end
+				endcase
+			end
+		end else if (clk_counter == 1) begin
+			// ROM data must be valid until clk1 is low. Then we can reset the values:
+			insn <= 16'h0;
+			FL_ADDR <= 22'h0;
+			insn_rdy <= 0;
+			rom_counter <= 0;
+		end
 	end
 end
 
@@ -259,11 +273,11 @@ reg sram_we_clk_n;
 wire sram_we_n;
 assign sram_we_n = sram_we_clk_n | gigatron_sram_we_n;
 
-assign SRAM_CE_N = 0; // chip select
-assign SRAM_LB_N = 0; // use lower byte
-assign SRAM_UB_N = 0; // high byte not used.
-assign SRAM_OE_N = gigatron_sram_oe_n | ~sram_we_n;
-assign SRAM_WE_N = sram_we_n | ~gigatron_sram_oe_n;
+assign SRAM_CE_N = ~reset_n; // chip select
+assign SRAM_LB_N = ~reset_n; // use lower byte
+assign SRAM_UB_N = ~reset_n; // high byte not used.
+assign SRAM_OE_N = ~reset_n | gigatron_sram_oe_n | ~sram_we_n;
+assign SRAM_WE_N = ~reset_n | sram_we_n | ~gigatron_sram_oe_n;
 
 initial begin
 	sram_we_clk_n = 1'b1;
@@ -346,8 +360,12 @@ reg [7:0] InputReg;
 
 always @(posedge clk2)
 begin
-	if (!IE_N) begin
-		InputReg <= Input;
+	if (!reset_n) begin
+		InputReg <= 8'h00;
+	end else begin
+		if (!IE_N) begin
+			InputReg <= Input;
+		end
 	end
 end
 
@@ -366,135 +384,140 @@ segment7 seg3(.HEXLED(HEX3), .VALUE(dbgval[15:12]), .CLK(CLOCK_50));
 
 always @(posedge CLOCK_50)
 begin
-	LEDR <= SW;
-	case (SW[4:0])
-		5'b00000: begin
-			dbgval <= romaddr;
-		end
-		5'b00001: dbgval <= insn;
-		5'b00010: begin
-			dbgval[15:8] <= RegIR;
-			dbgval[7:0] <= RegDR;
-		end
-		5'b00011: begin
-			dbgval[15:8] <= 0;
-			dbgval[7:0] <= RegAccu;
-		end
-		5'b00100: begin
-			dbgval[15:8] <= 0;
-			dbgval[7:0] <= RegX;
-		end
-		5'b00101: begin
-			dbgval[15:8] <= 0;
-			dbgval[7:0] <= RegY;
-		end
-		5'b00110: begin
-			dbgval[15:8] <= 0;
-			dbgval[7:0] <= RegOUT;
-		end
-		5'b00111: begin
-			dbgval[15:8] <= 0;
-			dbgval[7:0] <= BUSValue;
-		end
-		5'b01000: begin
-			dbgval[15:8] = 0;
-			dbgval[7:0] = ALUValue;
-		end
-		5'b01001: begin
-			dbgval[15:8] <= gamepad_data;
-			dbgval[7:0] <= InputReg;
-		end
-		5'b01010: begin
-			if (SRAM_ADDR < 18'h10000) begin
-				dbgval <= SRAM_ADDR[15:0];
-			end else begin
-				dbgval <= 16'hdead;
+	if (!reset_n) begin
+		dbgval <= 16'hdead;
+		LEDR <= 10'h3FF;
+	end else begin
+		LEDR <= SW;
+		case (SW[4:0])
+			5'b00000: begin
+				dbgval <= romaddr;
 			end
-		end
-		5'b01011: begin
-			dbgval <= SRAM_DQ;
-		end
-		5'b01100: begin
-			dbgval <= EXOUT;
-		end
-		5'b01101: begin
-			dbgval[0] <= SRAM_OE_N;
-			dbgval[1] <= gigatron_sram_oe_n;
-			dbgval[7:2] <= 0;
-			dbgval[8] <= SRAM_WE_N;
-			dbgval[9] <= gigatron_sram_we_n;
-			dbgval[15:10] <= 0;
-		end
-		5'b01110: begin
-			dbgval[0] <= reset_n;
-			dbgval[1] <= clk1;
-			dbgval[2] <= clk2;
-			dbgval[7:3] <= 0;
-			dbgval[15:8] <= clk_counter;
-		end
-		5'b01111: begin
-			dbgval[3:0] <= rom_counter;
-			dbgval[7:4] <= insn_rdy;
-		end
-		5'b10000: begin
-			dbgval <= dbgvga;
-		end
-		5'b10001: begin
-			dbgval <= dbgvga;
-		end
-		5'b10010: begin
-			dbgval <= dbgvga;
-		end
-		5'b10011: begin
-			dbgval <= dbgvga;
-		end
-		5'b10100: begin
-			dbgval <= dbgvga;
-		end
-		5'b10101: begin
-			dbgval <= dbgvga;
-		end
-		5'b10110: begin
-			dbgval <= dbgvga;
-		end
-		5'b10111: begin
-			dbgval <= dbgvga;
-		end
+			5'b00001: dbgval <= insn;
+			5'b00010: begin
+				dbgval[15:8] <= RegIR;
+				dbgval[7:0] <= RegDR;
+			end
+			5'b00011: begin
+				dbgval[15:8] <= 0;
+				dbgval[7:0] <= RegAccu;
+			end
+			5'b00100: begin
+				dbgval[15:8] <= 0;
+				dbgval[7:0] <= RegX;
+			end
+			5'b00101: begin
+				dbgval[15:8] <= 0;
+				dbgval[7:0] <= RegY;
+			end
+			5'b00110: begin
+				dbgval[15:8] <= 0;
+				dbgval[7:0] <= RegOUT;
+			end
+			5'b00111: begin
+				dbgval[15:8] <= 0;
+				dbgval[7:0] <= BUSValue;
+			end
+			5'b01000: begin
+				dbgval[15:8] = 0;
+				dbgval[7:0] = ALUValue;
+			end
+			5'b01001: begin
+				dbgval[15:8] <= gamepad_data;
+				dbgval[7:0] <= InputReg;
+			end
+			5'b01010: begin
+				if (SRAM_ADDR < 18'h10000) begin
+					dbgval <= SRAM_ADDR[15:0];
+				end else begin
+					dbgval <= 16'hdead;
+				end
+			end
+			5'b01011: begin
+				dbgval <= SRAM_DQ;
+			end
+			5'b01100: begin
+				dbgval <= EXOUT;
+			end
+			5'b01101: begin
+				dbgval[0] <= SRAM_OE_N;
+				dbgval[1] <= gigatron_sram_oe_n;
+				dbgval[7:2] <= 0;
+				dbgval[8] <= SRAM_WE_N;
+				dbgval[9] <= gigatron_sram_we_n;
+				dbgval[15:10] <= 0;
+			end
+			5'b01110: begin
+				dbgval[0] <= reset_n;
+				dbgval[1] <= clk1;
+				dbgval[2] <= clk2;
+				dbgval[7:3] <= 0;
+				dbgval[15:8] <= clk_counter;
+			end
+			5'b01111: begin
+				dbgval[3:0] <= rom_counter;
+				dbgval[7:4] <= insn_rdy;
+			end
+			5'b10000: begin
+				dbgval <= dbgvga;
+			end
+			5'b10001: begin
+				dbgval <= dbgvga;
+			end
+			5'b10010: begin
+				dbgval <= dbgvga;
+			end
+			5'b10011: begin
+				dbgval <= dbgvga;
+			end
+			5'b10100: begin
+				dbgval <= dbgvga;
+			end
+			5'b10101: begin
+				dbgval <= dbgvga;
+			end
+			5'b10110: begin
+				dbgval <= dbgvga;
+			end
+			5'b10111: begin
+				dbgval <= dbgvga;
+			end
 
-		5'b11000: begin
-			dbgval[15:0] <= ps2_dbg;
-		end
-		5'b11001: begin
-			dbgval[15:0] <= ps2_dbg;
-		end
+			5'b11000: begin
+				dbgval[15:0] <= ps2_dbg;
+			end
+			5'b11001: begin
+				dbgval[15:0] <= ps2_dbg;
+			end
 
-		5'b11010: begin
-			dbgval[15:0] <= ps2_dbg;
-		end
+			5'b11010: begin
+				dbgval[15:0] <= ps2_dbg;
+			end
 
-		5'b11011: begin
-			dbgval[15:0] <= ps2_dbg;
-		end
+			5'b11011: begin
+				dbgval[15:0] <= ps2_dbg;
+			end
 
-		5'b11100: begin
-			dbgval[15:0] <= ps2_dbg;
-		end
+			5'b11100: begin
+				dbgval[15:0] <= ps2_dbg;
+			end
 
-		5'b11101: begin
-			dbgval[15:0] <= ps2_dbg;
-		end
+			5'b11101: begin
+				dbgval[15:0] <= ps2_dbg;
+			end
 
-		5'b11110: begin
-			dbgval[15:0] <= ps2_dbg;
-		end
+			5'b11110: begin
+				dbgval[15:0] <= ps2_dbg;
+			end
 
-		5'b11111: begin
-			dbgval[15:0] <= ps2_dbg;
-		end
+			5'b11111: begin
+				dbgval[15:0] <= ps2_dbg;
+			end
 
-		default: dbgval <= 16'hDEAD;
+			default: dbgval <= 16'hDEAD;
 
-	endcase
+		endcase
+	end
 end
 
 // CPU (imported from Digital)
@@ -607,6 +630,8 @@ sdram_controller sdram(
 
 vgadrv vga(
 	CLOCK_50,
+	reset_n,
+
 	VGA_R,
 	VGA_G,
 	VGA_B,

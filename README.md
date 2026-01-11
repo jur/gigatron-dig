@@ -15,7 +15,7 @@ The simulation can be started by the following steps:
 ![Play Button](pictures/tools.png)
 * Click on EnableCLK. The CPU is now running and takes some time until the window with the VGA output is opened.
 ![EnableCLK](pictures/enableclk.png)
-* You can control it via the buttons of the gamepad. Click on the SELECT button and hold for some seconds. This will change the resolution. Release the SELECT button for some seconds. Repeat that until you have more black on the screen. More black lines will make it faster.
+* You can control it via the buttons of the gamepad. Click on the SELECT button (or PAGE DOWN) and hold for some seconds. This will change the resolution. Release the SELECT button for some seconds. Repeat that until you have more black on the screen. More black lines will make it faster.
 ![Gamepad](pictures/gamepad.png)
 * With the buttons for UP/DOWN/LEFT/RIGHT you can select an menu entry and A will start it.
 * A keyboard is also emulated. A window is opened where you can type. It will buffer the keys, but it cannot handle keys which are typed multiple times. You need to wait until it transferred something else; e.g. 0xFF (when no button pressed on the gamepad).
@@ -76,6 +76,9 @@ You have to select a speed with SW[8:5] (e.g. 1000) and then enable the clock by
 When the clock speed is low (i.e. 0000), it will take a very long time.
 There should be something visible on VGA monitor which is connected to the board (blue background with text Gigtron).
 
+## Board Reset
+The reset buttons are KEY0, or pressing KEY2 + KEY3.
+
 ## Gamepad
 Button KEY1 is the A button.
 KEY3 and KEY2 change function dependeing on SW[1:0].
@@ -87,9 +90,27 @@ KEY3 and KEY2 change function dependeing on SW[1:0].
 |      10 | SELECT | START
 |      11 | A      | B
 
+You need to hold START for several seconds for a reset.
+
 ## PS/2 Keyboard
 The DE1 board has a PS/2 connector. A keyboard can be connected. The layout is mainly German with some support for American.
 See PS/2 Keyboard decoder in file AlteraCycloneIIFPGAStarterBoard/ps2controller.v.
+
+The key mappings are:
+| PS/2 Key               | Button
+|------------------------|-------------
+| HOME                   | B
+| END                    | A
+| INSERT                 | B
+| PAGE UP                | START
+| PAGE DOWN              | SELECT
+| CTRL + ALT + DEL       | START
+| CTRL + ALT + BACKSPACE | START
+| DEL                    | A
+| Cursor keys            | control pad
+| CTRL + SPACE           | 0 Byte
+
+You need to hold CTRL + ALT + DEL or BACKSPACE for several seconds for a reset.
 
 ## Limitations
 The ROM access on the board is too slow.
