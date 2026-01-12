@@ -43,7 +43,23 @@ module gigatron(
 
 	// PS/2
 	input wire PS2_CLK,
-	input wire PS2_DAT);
+	input wire PS2_DAT,
+
+	// UART
+	output wire UART_TXD,
+	input wire UART_RXD,
+
+	// GPIO 0
+	inout wire [35:0] GPIO_0);
+
+assign GPIO_0[0] = SER_LATCH;
+
+assign SER_DATA_EXT = GPIO_0[1];
+
+assign GPIO_0[1] = 1'bz;
+
+assign GPIO_0[2] = SER_PULSE;
+assign GPIO_0[35:3] = 33'bzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzz;
 
 // Reset
 reg reset_n;
@@ -213,7 +229,12 @@ end
 // Famiclone controller lines
 wire SER_PULSE;
 wire SER_LATCH;
-reg SER_DATA;
+wire SER_DATA;
+wire SER_DATA_EXT;
+reg SER_DATA_INT;
+
+// Either via GPIO_0 or internal (PS/2 + UART)
+assign SER_DATA = SW[2] ? SER_DATA_EXT : SER_DATA_INT;
 
 reg [7:0] gamepad_data;
 reg ps2_sending;
@@ -229,7 +250,7 @@ wire ser_pulse_rise = ser_pulse_s0 & ~ser_pulse_s1;
 
 always @(posedge CLOCK_50)
 begin
-	SER_DATA <= gamepad_data[gamepad_bit];
+	SER_DATA_INT <= gamepad_data[gamepad_bit];
 
 	if (!reset_n) begin
 		ser_latch_s0 <= 1'b0;
@@ -238,6 +259,7 @@ begin
 		ser_pulse_s1 <= 1'b0;
 		gamepad_data = 8'hFF;
 		ps2_sending = 1'b0;
+		ser_sending <= 1'b0;
 		gamepad_bit = 3'h0;
 	end else begin
 		if (ser_latch_rise) begin
@@ -245,12 +267,18 @@ begin
 			if (ps2_ready) begin
 				gamepad_data <= ps2_data;
 				ps2_sending <= 1'b1;
+			end else if (ser_rx_ready) begin
+				gamepad_data <= ser_rx_data;
+				ser_sending <= 1'b1;
 			end else begin
 				gamepad_data <= key_data;
 			end
 		end else if (ser_pulse_rise) begin
-			if (gamepad_bit == 4'h0) begin
+			if (ps2_sending != 0) begin
 				ps2_sending <= 1'b0;
+			end
+			if (ser_sending != 0) begin
+				ser_sending <= 1'b0;
 			end
 
 			gamepad_bit <= gamepad_bit - 3'h1;
@@ -344,6 +372,74 @@ ps2controller ps2ctrl(
 	// Ack
 	ps2_sending);
 
+// Serial UART
+
+// UART RX
+wire [7:0] ser_rx_data;
+wire ser_rx_ready;
+reg ser_sending;
+
+// UART TX
+reg [7:0] txdata_n;
+reg txready_n;
+wire txbusy;
+
+reg txready_d;
+reg txbusy_d;
+
+seruart uart0(
+	CLOCK_50,
+	reset_n,
+
+	txdata_n,
+	txready_n,
+	txbusy,
+
+	// Ack
+	ser_sending,
+
+	// Output key codes
+	ser_rx_data,
+	ser_rx_ready,
+
+	// UART
+	UART_TXD,
+	UART_RXD);
+
+initial begin
+	txdata_n = 8'h00;
+	txready_n = 1'b0;
+	txready_d = 1'b0;
+	txbusy_d = 1'b0;
+end
+
+// txdata_n and txready_n is just a copy of txdata and txready, txready_n is set low when sending (txbusy is high).
+always @(posedge CLOCK_50)
+begin
+	if (!reset_n) begin
+		txdata_n <= 8'h00;
+		txready_n <= 1'b0;
+		txready_d <= 1'b0;
+		txbusy_d <= 1'b0;
+	end else begin
+		txready_d <= txready;
+		txbusy_d <= txbusy;
+
+		if (txready_n) begin
+			if (~txbusy_d & txbusy) begin
+				txready_n <= 1'b0;
+			end
+		end else begin
+			if (~txready_d & txready) begin
+				// Send byte via UART.
+				txdata_n <= txdata;
+				txready_n <= 1'b1;
+			end
+		end
+	end
+end
+
+
 // Debug Output
 wire [7:0] RegIR; // Instruction Register Value
 wire [7:0] RegDR; // Data Register Value
@@ -403,11 +499,12 @@ begin
 				dbgval[7:0] <= RegAccu;
 			end
 			5'b00100: begin
-				dbgval[15:8] <= 0;
-				dbgval[7:0] <= RegX;
+				dbgval[15:8] <= txdata;
+				dbgval[7] <= txready;
+				dbgval[6:0] <= hscount;
 			end
 			5'b00101: begin
-				dbgval[15:8] <= 0;
+				dbgval[15:8] <= RegX;
 				dbgval[7:0] <= RegY;
 			end
 			5'b00110: begin
@@ -663,5 +760,21 @@ vgadrv vga(
 	// Debug
 	dbgvga,
 	SW[2:0]);
+
+wire [7:0] txdata;
+wire txready;
+wire [3:0] hscount;
+
+vsyncout vsout0(
+	CLOCK_50,
+	reset_n,
+
+	gigatron_vga_hs,
+	gigatron_vga_vs,
+
+	txdata,
+	txready,
+
+	hscount);
 
 endmodule

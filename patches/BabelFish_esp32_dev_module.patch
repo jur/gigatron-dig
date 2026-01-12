@@ -1,0 +1,225 @@
+Patch for BabelFish to support ESP32 Dev Module
+https://github.com/kervinck/gigatron-rom.git commit 809b0fd834cb9ec2b219216722df4d567f65baeb
+
+diff --git a/Utils/BabelFish/BabelFish.ino b/Utils/BabelFish/BabelFish.ino
+index f146eb9e..7c9c8427 100644
+--- a/Utils/BabelFish/BabelFish.ino
++++ b/Utils/BabelFish/BabelFish.ino
+@@ -40,6 +40,7 @@
+ //      - Arduino Nano
+ //      - Arduino/Genuino Micro
+ //      - ATtiny85 (8 MHz)
++//      - ESP32 Dev Module
+ 
+ /*----------------------------------------------------------------------+
+  |                                                                      |
+@@ -240,6 +241,27 @@
+   #define hasSerial 0
+ #endif
+ 
++#if defined (ARDUINO_ESP32_DEV)
++  #define platform "ESP32"
++  #define maxStorage 32256
++
++  // Pins for Gigatron (must be on PORTB)
++  #define gigatronDataPin  25
++  #define gigatronLatchPin 26
++  #define gigatronPulsePin 27
++  #define gigatronPinToBitMask digitalPinToBitMask
++
++  // Pins for Controller
++  #define gameControllerDataPin -1
++
++  // Pins for PS/2 keyboard (ESP32 Dev Module)
++  #define keyboardClockPin 16 // GPIO/IRQ
++  #define keyboardDataPin  17 // GPIO
++
++  // Link to PC/laptop
++  #define hasSerial 1
++#endif
++
+ /*----------------------------------------------------------------------+
+  |                                                                      |
+  |      Built-in GT1 images                                             |
+@@ -302,13 +324,6 @@ const struct { const byte *gt1; const char *name; } gt1Files[] = {
+  |                                                                      |
+  +----------------------------------------------------------------------*/
+ 
+-/*
+- *  Bit masks for pins
+- */
+-byte gigatronDataBit;
+-byte gigatronLatchBit;
+-byte gigatronPulseBit;
+-
+ /*
+  *  Loader protocol
+  */
+@@ -364,13 +379,12 @@ extern const byte nrKeymaps; // From in PS2.ino
+  */
+ void setup()
+ {
+-  gigatronDataBit  = gigatronPinToBitMask(gigatronDataPin);
+-  gigatronLatchBit = gigatronPinToBitMask(gigatronLatchPin);
+-  gigatronPulseBit = gigatronPinToBitMask(gigatronPulsePin);
+-
+   // Enable output pin (pins are set to input by default)
+-  PORTB |= gigatronDataBit; // Send 1 when idle
+-  DDRB = gigatronDataBit;
++  pinMode(gigatronLatchPin, INPUT);
++  pinMode(gigatronPulsePin, INPUT);
++  pinMode(gigatronDataPin, OUTPUT);
++
++  digitalWrite(gigatronDataPin, HIGH);
+ 
+   #if gameControllerDataPin >= 0
+     pinMode(gameControllerDataPin, INPUT_PULLUP); // Force HIGH if disconnected
+@@ -507,8 +521,8 @@ bool detectGigatron()
+ 
+   // Sample the sync signals coming out of the controller port
+   while (millis() < timeout) {
+-    byte pinb = PINB; // capture SER_PULSE and SER_LATCH at the same time
+-    T[(pinb & gigatronLatchBit ? 2 : 0) + (pinb & gigatronPulseBit ? 1 : 0)]++;
++    // TBD: capture SER_PULSE and SER_LATCH at the same time
++    T[(digitalRead(gigatronLatchPin) ? 2 : 0) + (digitalRead(gigatronPulsePin) ? 1 : 0)]++;
+   }
+ 
+   float S = T[0] + T[1] + T[2] + T[3] + .1;     // Avoid zero division (pedantic)
+@@ -983,12 +997,16 @@ int nextSerial()
+ static inline void critical()
+ {
+   forbidPs2();
++  #if 0
+   noInterrupts();
++  #endif
+ }
+ 
+ static inline void nonCritical()
+ {
++  #if 0
+   interrupts();
++  #endif
+   allowPs2();
+ }
+ 
+@@ -1009,7 +1027,7 @@ void sendGt1Segment(word address, int len)
+ 
+   // Wait for vPulse to start so we're 100% sure to skip one frame and
+   // the checksum resets on the other side. (This is a bit pedantic)
+-  while (PINB & gigatronLatchBit) // ~160 us
++  while (digitalRead(gigatronLatchPin)) // ~160 us
+     ;
+ }
+ 
+@@ -1033,7 +1051,7 @@ void sendController(byte value, int n)
+     sendFirstByte(value);
+   nonCritical();
+ 
+-  PORTB |= gigatronDataBit; // Send 1 when idle
++  digitalWrite(gigatronDataPin, HIGH); // Send 1 when idle
+ }
+ 
+ void resetChecksum()
+@@ -1067,31 +1085,31 @@ void sendFrame(byte firstByte, byte len, word address, byte message[])
+   byte lastByte = -checksum;   // Checksum must come out as 0
+   sendBits(lastByte, 8);
+   checksum = lastByte;         // Concatenate checksums
+-  PORTB |= gigatronDataBit;    // Send 1 when idle
++  digitalWrite(gigatronDataPin, HIGH);    // Send 1 when idle
+ }
+ 
+ void sendFirstByte(byte value)
+ {
+   // Wait vertical sync NEGATIVE edge to sync with loader
+-  while (~PINB & gigatronLatchBit) // Ensure vSync is HIGH first
++  while (!digitalRead(gigatronLatchPin)) // Ensure vSync is HIGH first
+     ;
+ 
+   // Send first bit in advance
+   if (value & 128)
+-    PORTB |= gigatronDataBit;
++    digitalWrite(gigatronDataPin, HIGH);
+   else
+-    PORTB &= ~gigatronDataBit;
++    digitalWrite(gigatronDataPin, LOW);
+ 
+-  while (PINB & gigatronLatchBit) // Then wait for vSync to drop
++  while (digitalRead(gigatronLatchPin)) // Then wait for vSync to drop
+     ;
+ 
+   // Wait for bit transfer at horizontal sync RISING edge. As this is at
+   // the end of a short (3.8 us) pulse following VERY shortly (0.64us) after
+   // vSync drop, this timing is tight. That is the reason that interrupts
+   // must be disabled on the microcontroller (and why 1 MHz isn't enough).
+-  while (PINB & gigatronPulseBit) // Ensure hSync is LOW first
++  while (digitalRead(gigatronPulsePin)) // Ensure hSync is LOW first
+     ;
+-  while (~PINB & gigatronPulseBit) // Then wait for hSync to rise
++  while (!digitalRead(gigatronPulsePin)) // Then wait for hSync to rise
+     ;
+ 
+   // Send remaining bits
+@@ -1104,14 +1122,14 @@ void sendBits(byte value, byte n)
+   for (byte bit=1<<(n-1); bit; bit>>=1) {
+     // Send next bit
+     if (value & bit)
+-      PORTB |= gigatronDataBit;
++      digitalWrite(gigatronDataPin, HIGH);
+     else
+-      PORTB &= ~gigatronDataBit;
++      digitalWrite(gigatronDataPin, LOW);
+ 
+     // Wait for bit transfer at horizontal sync POSITIVE edge.
+-    while (PINB & gigatronPulseBit)  // Ensure hSync is LOW first
++    while (digitalRead(gigatronPulsePin))  // Ensure hSync is LOW first
+       ;
+-    while (~PINB & gigatronPulseBit) // Then wait for hSync to rise
++    while (!digitalRead(gigatronPulsePin)) // Then wait for hSync to rise
+       ;
+   }
+   checksum += value;
+@@ -1153,22 +1171,21 @@ byte waitVSync()
+ 
+   // Wait vertical sync NEGATIVE edge
+ 
+-  while (~PINB & gigatronLatchBit) // Ensure vSync is HIGH first
++  while (!digitalRead(gigatronLatchPin)) // Ensure vSync is HIGH first
+     if (!--timeout)
+       return 0;
+-
+-  while (PINB & gigatronLatchBit) // Then wait for vSync to drop
++  while (digitalRead(gigatronLatchPin)) // Then wait for vSync to drop
+     if (!--timeout)
+       return 0;
+ 
+   // Now count horizontal sync POSITIVE edges
+   byte count = 0;
+   for (;;) {
+-    while (PINB & gigatronPulseBit)  // Ensure hSync is LOW first
++    while (digitalRead(gigatronPulsePin))  // Ensure hSync is LOW first
+       ;
+-    if (PINB & gigatronLatchBit)     // Not in vPulse anymore
++    if (digitalRead(gigatronLatchPin))     // Not in vPulse anymore
+       break;
+-    while (~PINB & gigatronPulseBit) // Then wait for hSync to rise
++    while (!digitalRead(gigatronPulsePin)) // Then wait for hSync to rise
+       ;
+     count += 1;
+   }
+diff --git a/Utils/BabelFish/PS2.ino b/Utils/BabelFish/PS2.ino
+index d787ffa2..eb9e7ad3 100644
+--- a/Utils/BabelFish/PS2.ino
++++ b/Utils/BabelFish/PS2.ino
+@@ -73,6 +73,12 @@
+ 
+ #define CTRLALTDEL     (255 ^ buttonStart)
+ 
++#if defined (ARDUINO_ESP32_DEV)
++inline word max(word a, int b) {
++    return (a > b) ? a : b;
++}
++#endif
++
+ /*
+  *  Keyboard layout mapping
+  */

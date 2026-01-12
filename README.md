@@ -90,7 +90,30 @@ KEY3 and KEY2 change function dependeing on SW[1:0].
 |      10 | SELECT | START
 |      11 | A      | B
 
+| SW[2] | Selected input interface
+|-------|---------------------------------------------------
+|     0 | Enable gamepad, PS/2 and RS232 UART
+|     1 | Enable external, BabelFish, Pluggy McPlugface 3.3V
+
 You need to hold START for several seconds for a reset.
+
+## RS232 UART
+The UART is supported. The configuration is 115200 Baud 8N1.
+Only input was tested. This works similar like a PS/2 keyboard.
+
+## BabelFish, Pluggy McPlugface
+BabelFish and Pluggy McPlugface can be connected GPIO\_0.
+Pluggy McPlugface needs a level converter to 3.3V.
+
+| Pin | GPIO\_0 | Signal 3.3V | ESP32 Dev Module GPIO
+|-----|---------|-------------|----------------------
+|   1 |  IO\_A0 | SER\_LATCH  | 26
+|   2 |  IO\_A1 | SER\_DATA   | 25
+|   3 |  IO\_A2 | SER\_PULSE  | 27
+|  12 |     GND | GND         | GND
+
+patches/BabelFish\_esp32\_dev\_module.patch is the patch for BabelFish to support
+the ESP32 dev module.
 
 ## PS/2 Keyboard
 The DE1 board has a PS/2 connector. A keyboard can be connected. The layout is mainly German with some support for American.
@@ -158,8 +181,10 @@ The switches can be used to configure the board:
 |   00001 | Value read from ROM
 |   00010 | Instruction register and data register
 |   00011 | Accumulator register
-|   00100 | X register
-|   00101 | Y register
+|   00100 | Bit 15-8: TX data
+|         | Bit 7: 1 -> TX data ready
+|         | Bit 6-0: HSync Count during VSync
+|   00101 | Y register, X register
 |   00110 | OUT register
 |   00111 | value on BUS
 |   01000 | Value calculated by ALU
