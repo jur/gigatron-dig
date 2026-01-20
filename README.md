@@ -110,6 +110,8 @@ Pluggy McPlugface needs a level converter to 3.3V.
 |   1 |  IO\_A0 | SER\_LATCH  | 26
 |   2 |  IO\_A1 | SER\_DATA   | 25
 |   3 |  IO\_A2 | SER\_PULSE  | 27
+|   4 |  IO\_A3 | PS2\_CLK    | 16
+|   5 |  IO\_A4 | PS2\_DAT    | 17
 |  12 |     GND | GND         | GND
 
 patches/BabelFish\_esp32\_dev\_module.patch is the patch for BabelFish to support

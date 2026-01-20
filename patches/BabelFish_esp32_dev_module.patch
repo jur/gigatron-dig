@@ -2,7 +2,7 @@ Patch for BabelFish to support ESP32 Dev Module
 https://github.com/kervinck/gigatron-rom.git commit 809b0fd834cb9ec2b219216722df4d567f65baeb
 
 diff --git a/Utils/BabelFish/BabelFish.ino b/Utils/BabelFish/BabelFish.ino
-index f146eb9e..7c9c8427 100644
+index f146eb9e..d18d379a 100644
 --- a/Utils/BabelFish/BabelFish.ino
 +++ b/Utils/BabelFish/BabelFish.ino
 @@ -40,6 +40,7 @@
@@ -74,7 +74,7 @@ index f146eb9e..7c9c8427 100644
  
    #if gameControllerDataPin >= 0
      pinMode(gameControllerDataPin, INPUT_PULLUP); // Force HIGH if disconnected
-@@ -507,8 +521,8 @@ bool detectGigatron()
+@@ -507,16 +521,19 @@ bool detectGigatron()
  
    // Sample the sync signals coming out of the controller port
    while (millis() < timeout) {
@@ -83,13 +83,26 @@ index f146eb9e..7c9c8427 100644
 +    // TBD: capture SER_PULSE and SER_LATCH at the same time
 +    T[(digitalRead(gigatronLatchPin) ? 2 : 0) + (digitalRead(gigatronPulsePin) ? 1 : 0)]++;
    }
- 
+-
++#if 0
    float S = T[0] + T[1] + T[2] + T[3] + .1;     // Avoid zero division (pedantic)
-@@ -983,12 +997,16 @@ int nextSerial()
+   float vSync = (T[0] + T[1]) / ( 8 * S / 521); // Adjusted vSync signal
+   float hSync = (T[0] + T[2]) / (96 * S / 800); // Standard hSync signal
+ 
+   // Check that vSync and hSync characteristics look normal
+   return 0.95 <= vSync && vSync <= 1.25 && 0.90 <= hSync && hSync <= 1.10;
++#else
++  return (T[0] > 0) && (T[1] > 0) && (T[2] > 0) && (T[3] > 0);
++#endif
+ }
+ 
+ void sendEcho(char next, char last)
+@@ -982,14 +999,18 @@ int nextSerial()
+ 
  static inline void critical()
  {
++#if 0
    forbidPs2();
-+  #if 0
    noInterrupts();
 +  #endif
  }
@@ -98,11 +111,12 @@ index f146eb9e..7c9c8427 100644
  {
 +  #if 0
    interrupts();
-+  #endif
    allowPs2();
++  #endif
  }
  
-@@ -1009,7 +1027,7 @@ void sendGt1Segment(word address, int len)
+ // Send a 1..256 byte code or data segment into the Gigatron by
+@@ -1009,7 +1030,7 @@ void sendGt1Segment(word address, int len)
  
    // Wait for vPulse to start so we're 100% sure to skip one frame and
    // the checksum resets on the other side. (This is a bit pedantic)
@@ -111,8 +125,15 @@ index f146eb9e..7c9c8427 100644
      ;
  }
  
-@@ -1033,7 +1051,7 @@ void sendController(byte value, int n)
+@@ -1029,11 +1050,13 @@ void sendController(byte value, int n)
+   // Send controller code for n frames
+   // E.g. 4 frames = 3/60s = ~50 ms
+   critical();
+-  for (int i=0; i<n; i++)
++  waitVSync();
++  for (int i=0; i<n; i++) {
      sendFirstByte(value);
++  }
    nonCritical();
  
 -  PORTB |= gigatronDataBit; // Send 1 when idle
@@ -120,7 +141,7 @@ index f146eb9e..7c9c8427 100644
  }
  
  void resetChecksum()
-@@ -1067,31 +1085,31 @@ void sendFrame(byte firstByte, byte len, word address, byte message[])
+@@ -1067,31 +1090,31 @@ void sendFrame(byte firstByte, byte len, word address, byte message[])
    byte lastByte = -checksum;   // Checksum must come out as 0
    sendBits(lastByte, 8);
    checksum = lastByte;         // Concatenate checksums
@@ -159,7 +180,7 @@ index f146eb9e..7c9c8427 100644
      ;
  
    // Send remaining bits
-@@ -1104,14 +1122,14 @@ void sendBits(byte value, byte n)
+@@ -1104,14 +1127,14 @@ void sendBits(byte value, byte n)
    for (byte bit=1<<(n-1); bit; bit>>=1) {
      // Send next bit
      if (value & bit)
@@ -178,7 +199,7 @@ index f146eb9e..7c9c8427 100644
        ;
    }
    checksum += value;
-@@ -1153,22 +1171,21 @@ byte waitVSync()
+@@ -1153,22 +1176,21 @@ byte waitVSync()
  
    // Wait vertical sync NEGATIVE edge
  
@@ -207,7 +228,7 @@ index f146eb9e..7c9c8427 100644
      count += 1;
    }
 diff --git a/Utils/BabelFish/PS2.ino b/Utils/BabelFish/PS2.ino
-index d787ffa2..eb9e7ad3 100644
+index d787ffa2..847dc377 100644
 --- a/Utils/BabelFish/PS2.ino
 +++ b/Utils/BabelFish/PS2.ino
 @@ -73,6 +73,12 @@
@@ -223,3 +244,67 @@ index d787ffa2..eb9e7ad3 100644
  /*
   *  Keyboard layout mapping
   */
+@@ -500,12 +506,14 @@ void allowPs2()
+   _n = 11;                       // Consider previous bits lost
+ }
+ 
++#if 0
+ // Pull clock line LOW to signal that we're not ready to receive
+ void forbidPs2()
+ {
+   digitalWrite(keyboardClockPin, LOW);
+   pinMode(keyboardClockPin, OUTPUT);
+ }
++#endif
+ 
+ // Read next byte from incoming PS/2 buffer, or 0 when empty
+ static byte readPs2Buffer()
+@@ -540,7 +548,7 @@ byte keyboard_getState()
+       case 0xaa: // BAT ok
+         #define oddParity(x) ((1 ^ x ^ (x>>1) ^ (x>>2) ^ (x>>3) ^ (x>>4) ^ (x>>5) ^ (x>>6) ^ (x>>7)) & 1)
+         #define code(x) ((1 << 10) | (oddParity(x) << 9) | ((x) << 1))
+-        keyboard_send(code(0xf4)); // Enable (fixes Walter's PERIBOARD-409)
++        // TBD: keyboard_send(code(0xf4)); // Enable (fixes Walter's PERIBOARD-409)
+         continue;
+     }
+ 
+@@ -656,6 +664,7 @@ byte fnKey(byte key)
+   return (PS2_F1 <= key && key <= PS2_F12) ? (key & 15) : 0;
+ }
+ 
++#if 0
+ // 'code' must include start, data, parity and stop bits
+ void keyboard_send(word code)
+ {
+@@ -708,3 +717,4 @@ void keyboard_send(word code)
+   while (digitalRead(keyboardClockPin) == 0 || digitalRead(keyboardDataPin) == 0)
+     ;
+ }
++#endif
+diff --git a/Utils/sendFile.py b/Utils/sendFile.py
+index 1118140e..f594090b 100755
+--- a/Utils/sendFile.py
++++ b/Utils/sendFile.py
+@@ -167,9 +167,13 @@ if isGt1 or isGtb:
+   print('Resetting Gigatron')
+   sendCommand('R')
+ 
++  sleep(2)
++
+   print('Starting Loader')
+   sendCommand('L')
+ 
++  sleep(2)
++
+ if isGt1:
+   print('Sending program %s' % repr(args.filename))
+   sendGt1(fp)
+@@ -177,7 +181,7 @@ if isGt1:
+ if isGtb:
+   print('Loading Tiny BASIC')
+   sendCommand('P')              # Load BASIC from BabelFish PROGMEM
+-  sleep(2)                      # Startup takes a while on 64K
++  sleep(4)                      # Startup takes a while on 64K
+   args.truncate = 25            # Line limit
+ 
+ if not isGt1:

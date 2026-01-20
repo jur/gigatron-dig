@@ -52,6 +52,10 @@ module gigatron(
 	// GPIO 0
 	inout wire [35:0] GPIO_0);
 
+// unused GPIO
+assign GPIO_0[35:3] = 33'bzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzz;
+
+// External Gamepad Output
 assign GPIO_0[0] = SER_LATCH;
 
 assign SER_DATA_EXT = GPIO_0[1];
@@ -59,7 +63,10 @@ assign SER_DATA_EXT = GPIO_0[1];
 assign GPIO_0[1] = 1'bz;
 
 assign GPIO_0[2] = SER_PULSE;
-assign GPIO_0[35:3] = 33'bzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzz;
+
+// External PS/2 Output
+assign GPIO_0[3] = PS2_CLK;
+assign GPIO_0[4] = PS2_DAT;
 
 // Reset
 reg reset_n;
