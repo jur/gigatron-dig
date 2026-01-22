@@ -206,20 +206,30 @@ The switches can be used to configure the board:
 |         | 2 bit clk\_counter
 |   01111 | rom\_counter
 |         | Bit 4: insn\_ready
-|   10000 | VGA debug information
+|   1x000 | VGA debug information
 |         | Bit 0: 1 means: Buffer (wdata) with captured VGA data is full (one line, 160 pixel).
 |         | Bit 1: wr\_enable signal of SDRAM controller (data ready for writing to SDRAM).
 |         | Bit 9: rd\_enable signal of SDRAM controller (address ready for reading from SDRAM).
 |         | Bit 10: 1 means: Waiting for data read from SDRAM.
 |         | Bit 11: 1 means: rd\_ready signal from SDSRAM controller (data has been read).
 |         | Bit 15: 1 means: busy signal from SDSRAM controller.
-|   10001 | VGA: Debug counter, incremented for each 16 Bit read from SDRAM.
-|   10010 | VGA: Next line (y) which should be read from SDRAM, because it will be displayed.
-|   10011 | VGA: Current line (y) which is read from SDRAM controller.
-|   10100 | VGA: Upper address bits for reading from SDRAM.
-|   10101 | VGA: Lower address bits for reading from SDRAM.
-|   10110 | VGA: Current pixel (x) read from SDRAM.
-|   10111 | VGA: Line (y) captured in buffer.
+|   1x001 | VGA: Debug counter, incremented for each 16 Bit read from SDRAM.
+|   1x010 | VGA: Next line (y) which should be read from SDRAM, because it will be displayed.
+|   1x011 | VGA: Current line (y) which is read from SDRAM controller.
+|   1x100 | VGA: Upper address bits for reading from SDRAM.
+|   1x101 | VGA: Lower address bits for reading from SDRAM.
+|   1x110 | VGA: Current pixel (x) read from SDRAM.
+|   1x111 | VGA: Line (y) captured in buffer.
+|   11000 | VGA single buffer 0
+|   11001 | VGA single buffer 1
+|   11010 | VGA single buffer 2
+|   11011 | VGA single buffer 3
+|   11100 | VGA single buffer 4
+|   11101 | VGA single buffer 5
+|   11110 | VGA single buffer 6
+|   11111 | VGA single buffer 7
+|   10xxx | VGA double buffer (4 buffers)
+|   0xxxx | VGA double buffer (4 buffers)
 
 The green LEDs are EXOUT; i.e. 0 to 3 are also on the gigatron TTL board.
 

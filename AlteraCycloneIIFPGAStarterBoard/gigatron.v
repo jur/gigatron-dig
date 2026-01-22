@@ -706,34 +706,34 @@ assign clk = CLOCK_50;
 assign DRAM_CLK = CLOCK_50;
 
 sdram_controller sdram(
-	 /* HOST INTERFACE */
-    .wr_addr(wr_addr),
-    .wr_data(wr_data),
-    .wr_enable(wr_enable),
+	/* HOST INTERFACE */
+	.wr_addr(wr_addr),
+	.wr_data(wr_data),
+	.wr_enable(wr_enable),
 
-    .rd_addr(rd_addr),
-    .rd_data(rd_data),
-    .rd_ready(rd_ready),
-    .rd_enable(rd_enable),
+	.rd_addr(rd_addr),
+	.rd_data(rd_data),
+	.rd_ready(rd_ready),
+	.rd_enable(rd_enable),
 
-    .busy(busy),
-	 .rst_n(reset_n),
-	 .clk(clk),
+	.busy(busy),
+	.rst_n(reset_n),
+	.clk(clk),
 
-    /* SDRAM SIDE */
-    .addr(DRAM_ADDR),
-	 .bank_addr(bank_addr),
-	 .data(DRAM_DQ),
-	 .clock_enable(DRAM_CKE),
-	 .cs_n(DRAM_CS_N),
-	 .ras_n(DRAM_RAS_N),
-	 .cas_n(DRAM_CAS_N),
-	 .we_n(DRAM_WE_N),
-    .data_mask_low(DRAM_LDQM),
-	 .data_mask_high(DRAM_UDQM));
+	/* SDRAM SIDE */
+	.addr(DRAM_ADDR),
+	.bank_addr(bank_addr),
+	.data(DRAM_DQ),
+	.clock_enable(DRAM_CKE),
+	.cs_n(DRAM_CS_N),
+	.ras_n(DRAM_RAS_N),
+	.cas_n(DRAM_CAS_N),
+	.we_n(DRAM_WE_N),
+	.data_mask_low(DRAM_LDQM),
+	.data_mask_high(DRAM_UDQM));
 
 vgadrv vga(
-	CLOCK_50,
+	clk,
 	reset_n,
 
 	VGA_R,
@@ -766,7 +766,7 @@ vgadrv vga(
 
 	// Debug
 	dbgvga,
-	SW[2:0]);
+	SW[4:0]);
 
 wire [7:0] txdata;
 wire txready;
